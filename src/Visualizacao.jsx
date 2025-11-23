@@ -10,33 +10,14 @@ export default function Visualizacao({
   const [obs, setObs] = useState(selecionados.map(() => ""));
 
   // ==========================================================
-  // 🔥 1 — DOWNLOAD REAL DA GIF E CONVERSÃO PARA BASE64
-  // ==========================================================
-  const carregarGIFBase64 = async (url) => {
-    try {
-      const res = await fetch(url);
-      const blob = await res.blob();
-
-      return await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.readAsDataURL(blob);
-      });
-    } catch (err) {
-      console.error("Erro carregando GIF:", url, err);
-      return "";
-    }
-  };
-
-  // ==========================================================
-  // 🔥 2 — GERA O HTML FINAL PARA DOWNLOAD
+  // 🔥 GERA O HTML FINAL PARA DOWNLOAD (usa URL remota da GIF)
   // ==========================================================
   const gerarHTML = async () => {
     let bloco = "";
 
     for (let i = 0; i < selecionados.length; i++) {
       const ex = selecionados[i];
-      const base64 = await carregarGIFBase64(ex.file);
+      const imgSrc = ex.file; // apontamos direto para o CDN
 
       bloco += `
         <section style="margin-bottom:40px;text-align:center;">
@@ -61,7 +42,7 @@ export default function Visualizacao({
           }
 
           <img 
-            src="${base64}" 
+            src="${imgSrc}" 
             style="
               width:290px;height:290px;object-fit:contain;
               border-radius:14px;padding:10px;
