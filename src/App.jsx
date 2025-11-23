@@ -18,6 +18,7 @@ export default function App() {
   const [alunos, setAlunos] = useState([]);
   const [carregandoAlunos, setCarregandoAlunos] = useState(false);
   const [erroAlunos, setErroAlunos] = useState("");
+  const [alunoSelecionadoId, setAlunoSelecionadoId] = useState("");
 
   // REMOVE ACENTOS / NORMALIZA
   function normalizar(texto) {
@@ -148,6 +149,13 @@ export default function App() {
     carregarAlunos();
   }, []);
 
+  useEffect(() => {
+    if (!alunoSelecionadoId && alunos.length) {
+      setAlunoSelecionadoId(alunos[0].id);
+      setNomeAluno((prev) => prev || alunos[0].nome);
+    }
+  }, [alunos, alunoSelecionadoId]);
+
   const treinosPorAluno = useMemo(() => {
     return salvos.reduce((acc, t) => {
       const key = t.aluno_id || t.aluno_nome || t.aluno || "sem-id";
@@ -156,6 +164,11 @@ export default function App() {
       return acc;
     }, {});
   }, [salvos]);
+
+  const treinosDoSelecionado = useMemo(
+    () => treinosPorAluno[alunoSelecionadoId] || [],
+    [treinosPorAluno, alunoSelecionadoId]
+  );
 
   const aplicarTreinoSalvo = (treino) => {
     if (!treino) return;
@@ -413,7 +426,15 @@ export default function App() {
               {alunos.map((a) => (
                 <div
                   key={a.id}
-                  className="p-3 border border-gray-200 rounded-xl"
+                  className={`p-3 border rounded-xl cursor-pointer transition ${
+                    alunoSelecionadoId === a.id
+                      ? "border-blue-500 bg-blue-50/60"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                  onClick={() => {
+                    setAlunoSelecionadoId(a.id);
+                    setNomeAluno(a.nome);
+                  }}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex-1">
@@ -427,12 +448,6 @@ export default function App() {
                       </p>
                     </div>
                     <div className="flex gap-2">
-                      <button
-                        className="text-xs px-2 py-1 border border-gray-200 rounded-lg hover:border-gray-300"
-                        onClick={() => setNomeAluno(a.nome)}
-                      >
-                        Usar
-                      </button>
                       <button
                         className="text-xs px-2 py-1 border border-gray-200 rounded-lg hover:border-gray-300"
                         onClick={async () => {
@@ -478,45 +493,59 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="mt-3 space-y-2">
-                    {(treinosPorAluno[a.id] || []).map((t) => (
-                      <div
-                        key={t.id}
-                        className="p-2 border border-gray-200 rounded-xl hover:border-gray-300 transition"
-                      >
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs text-gray-700">
-                            {Array.isArray(t.treino)
-                              ? `${t.treino.length} exercícios`
-                              : "Sem dados"}
-                          </p>
-                          <span className="text-[11px] text-gray-400">
-                            {t.created_at
-                              ? new Date(t.created_at).toLocaleDateString("pt-BR")
-                              : ""}
-                          </span>
-                        </div>
-                        <button
-                          className="mt-2 text-xs px-3 py-1 border border-gray-200 rounded-lg hover:border-gray-300"
-                          onClick={() => aplicarTreinoSalvo(t)}
-                        >
-                          Aplicar treino
-                        </button>
-                      </div>
-                    ))}
-
-                    {!(treinosPorAluno[a.id] || []).length && (
-                      <p className="text-xs text-gray-500">
-                        Nenhum treino salvo para este aluno.
-                      </p>
-                    )}
-                  </div>
                 </div>
               ))}
 
               {!carregandoAlunos && !alunos.length && (
                 <p className="text-sm text-gray-500">Nenhum aluno cadastrado.</p>
               )}
+            </div>
+            {/* Treinos do aluno selecionado */}
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-gray-500">
+                    Histórico
+                  </p>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Treinos do aluno selecionado
+                  </h3>
+                </div>
+              </div>
+
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                {treinosDoSelecionado.map((t) => (
+                  <div
+                    key={t.id}
+                    className="p-2 border border-gray-200 rounded-xl hover:border-gray-300 transition"
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-gray-700">
+                        {Array.isArray(t.treino)
+                          ? `${t.treino.length} exercícios`
+                          : "Sem dados"}
+                      </p>
+                      <span className="text-[11px] text-gray-400">
+                        {t.created_at
+                          ? new Date(t.created_at).toLocaleDateString("pt-BR")
+                          : ""}
+                      </span>
+                    </div>
+                    <button
+                      className="mt-2 text-xs px-3 py-1 border border-gray-200 rounded-lg hover:border-gray-300"
+                      onClick={() => aplicarTreinoSalvo(t)}
+                    >
+                      Aplicar treino
+                    </button>
+                  </div>
+                ))}
+
+                {!treinosDoSelecionado.length && (
+                  <p className="text-sm text-gray-500">
+                    Nenhum treino salvo para este aluno.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </section>
