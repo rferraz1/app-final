@@ -8,6 +8,9 @@ export default function App() {
   const [selecionados, setSelecionados] = useState([]);
   const [visualizando, setVisualizando] = useState(false);
   const [nomeAluno, setNomeAluno] = useState("");
+  const [salvos, setSalvos] = useState([]);
+  const [carregandoSalvos, setCarregandoSalvos] = useState(false);
+  const [erroSalvos, setErroSalvos] = useState("");
 
   // REMOVE ACENTOS / NORMALIZA
   function normalizar(texto) {
@@ -100,6 +103,38 @@ export default function App() {
     });
   };
 
+  // CARREGA TREINOS SALVOS (para copiar de um aluno para outro)
+  const carregarSalvos = async () => {
+    setCarregandoSalvos(true);
+    setErroSalvos("");
+    try {
+      const res = await fetch("/.netlify/functions/trainings");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      setSalvos(json.data || []);
+    } catch (err) {
+      console.error(err);
+      setErroSalvos("Não foi possível carregar treinos salvos.");
+    } finally {
+      setCarregandoSalvos(false);
+    }
+  };
+
+  useEffect(() => {
+    carregarSalvos();
+  }, []);
+
+  const aplicarTreinoSalvo = (treino) => {
+    if (!treino) return;
+    setNomeAluno(treino.aluno || "");
+    setSelecionados(
+      (treino.treino || []).map((ex, idx) => ({
+        ...ex,
+        id: ex.id || `${ex.nome || "ex"}-${idx}`,
+      }))
+    );
+  };
+
   // TELA DE VISUALIZAÇÃO
   if (visualizando) {
     return (
@@ -184,8 +219,8 @@ export default function App() {
           </div>
         </section>
 
-        {/* TREINO */}
-        <section className="bg-white/80 backdrop-blur border border-gray-200 rounded-3xl shadow-sm p-6 lg:p-7 lg:sticky lg:top-6 self-start">
+        {/* TREINO + LISTA SALVA */}
+        <section className="bg-white/80 backdrop-blur border border-gray-200 rounded-3xl shadow-sm p-6 lg:p-7 lg:sticky lg:top-6 self-start space-y-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-gray-500">
@@ -268,6 +303,62 @@ export default function App() {
           >
             Finalizar Treino
           </button>
+
+          {/* Treinos salvos */}
+          <div className="pt-4 border-t border-gray-200">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-gray-500">
+                  Salvos
+                </p>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Treinos anteriores
+                </h3>
+              </div>
+              <button
+                onClick={carregarSalvos}
+                className="text-sm text-blue-600 hover:text-blue-700"
+              >
+                {carregandoSalvos ? "Atualizando..." : "Atualizar"}
+              </button>
+            </div>
+
+            {erroSalvos && (
+              <p className="text-sm text-red-600 mb-2">{erroSalvos}</p>
+            )}
+
+            <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+              {salvos.map((t) => (
+                <div
+                  key={t.id}
+                  className="p-3 border border-gray-200 rounded-xl hover:border-gray-300 transition cursor-pointer"
+                  onClick={() => aplicarTreinoSalvo(t)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">
+                        {t.aluno}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {Array.isArray(t.treino) ? `${t.treino.length} exercícios` : "Sem dados"}
+                      </p>
+                    </div>
+                    <span className="text-xs text-gray-400">
+                      {t.created_at
+                        ? new Date(t.created_at).toLocaleDateString("pt-BR")
+                        : ""}
+                    </span>
+                  </div>
+                </div>
+              ))}
+
+              {!carregandoSalvos && !salvos.length && (
+                <p className="text-sm text-gray-500">
+                  Nenhum treino salvo ainda.
+                </p>
+              )}
+            </div>
+          </div>
         </section>
       </main>
     </div>
