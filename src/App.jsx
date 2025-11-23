@@ -15,6 +15,9 @@ export default function App() {
   const [erroSalvos, setErroSalvos] = useState("");
   const [salvandoAluno, setSalvandoAluno] = useState(false);
   const [msgAluno, setMsgAluno] = useState("");
+  const [alunos, setAlunos] = useState([]);
+  const [carregandoAlunos, setCarregandoAlunos] = useState(false);
+  const [erroAlunos, setErroAlunos] = useState("");
 
   // REMOVE ACENTOS / NORMALIZA
   function normalizar(texto) {
@@ -124,8 +127,25 @@ export default function App() {
     }
   };
 
+  const carregarAlunos = async () => {
+    setCarregandoAlunos(true);
+    setErroAlunos("");
+    try {
+      const res = await fetch(`${API_BASE}/alunos`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      setAlunos(json.data || []);
+    } catch (err) {
+      console.error(err);
+      setErroAlunos("Não foi possível carregar alunos.");
+    } finally {
+      setCarregandoAlunos(false);
+    }
+  };
+
   useEffect(() => {
     carregarSalvos();
+    carregarAlunos();
   }, []);
 
   const agrupadosPorAluno = useMemo(() => {
@@ -204,16 +224,17 @@ export default function App() {
                 });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const js = await res.json();
-                setMsgAluno(
-                  js.existed
-                    ? "Aluno já existia (ok)."
-                    : "Aluno salvo com sucesso."
-                );
-              } catch (err) {
-                setMsgAluno("Erro ao salvar aluno.");
-              } finally {
-                setSalvandoAluno(false);
-              }
+            setMsgAluno(
+              js.existed
+                ? "Aluno já existia (ok)."
+                : "Aluno salvo com sucesso."
+            );
+            carregarAlunos();
+          } catch (err) {
+            setMsgAluno("Erro ao salvar aluno.");
+          } finally {
+            setSalvandoAluno(false);
+          }
             }}
             className="px-4 py-2.5 bg-gray-900 text-white rounded-xl text-sm shadow-sm hover:bg-black transition disabled:opacity-50"
             disabled={salvandoAluno}
@@ -423,6 +444,106 @@ export default function App() {
                   Nenhum treino salvo ainda.
                 </p>
               )}
+            </div>
+
+            {/* Lista de alunos */}
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-gray-500">
+                    Alunos
+                  </p>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Lista de alunos
+                  </h3>
+                </div>
+                <button
+                  onClick={carregarAlunos}
+                  className="text-sm text-blue-600 hover:text-blue-700"
+                >
+                  {carregandoAlunos ? "Atualizando..." : "Atualizar"}
+                </button>
+              </div>
+
+              {erroAlunos && (
+                <p className="text-sm text-red-600 mb-2">{erroAlunos}</p>
+              )}
+
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                {alunos.map((a) => (
+                  <div
+                    key={a.id}
+                    className="p-2 border border-gray-200 rounded-xl flex items-center justify-between"
+                  >
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-gray-900">
+                        {a.nome}
+                      </p>
+                      <p className="text-[11px] text-gray-500">
+                        {a.created_at
+                          ? new Date(a.created_at).toLocaleDateString("pt-BR")
+                          : ""}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        className="text-xs px-2 py-1 border border-gray-200 rounded-lg hover:border-gray-300"
+                        onClick={() => {
+                          setNomeAluno(a.nome);
+                        }}
+                      >
+                        Usar
+                      </button>
+                      <button
+                        className="text-xs px-2 py-1 border border-gray-200 rounded-lg hover:border-gray-300"
+                        onClick={async () => {
+                          const novo = prompt("Novo nome do aluno:", a.nome);
+                          if (!novo || !novo.trim()) return;
+                          try {
+                            const res = await fetch(`${API_BASE}/alunos/${a.id}`, {
+                              method: "PUT",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ nome: novo }),
+                            });
+                            if (!res.ok) throw new Error();
+                            await carregarAlunos();
+                            setMsgAluno("Aluno atualizado.");
+                          } catch {
+                            setMsgAluno("Erro ao atualizar aluno.");
+                          }
+                        }}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        className="text-xs px-2 py-1 border border-red-200 text-red-600 rounded-lg hover:border-red-300"
+                        onClick={async () => {
+                          const ok = confirm(
+                            "Excluir aluno e treinos vinculados?"
+                          );
+                          if (!ok) return;
+                          try {
+                            const res = await fetch(`${API_BASE}/alunos/${a.id}`, {
+                              method: "DELETE",
+                            });
+                            if (!res.ok) throw new Error();
+                            await Promise.all([carregarAlunos(), carregarSalvos()]);
+                            setMsgAluno("Aluno excluído.");
+                          } catch {
+                            setMsgAluno("Erro ao excluir aluno.");
+                          }
+                        }}
+                      >
+                        Excluir
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {!carregandoAlunos && !alunos.length && (
+                  <p className="text-sm text-gray-500">Nenhum aluno cadastrado.</p>
+                )}
+              </div>
             </div>
           </div>
         </section>

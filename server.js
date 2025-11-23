@@ -88,6 +88,59 @@ app.get("/alunos", async (_req, res) => {
   }
 });
 
+app.put("/alunos/:id", async (req, res) => {
+  const nome = (req.body?.nome || "").trim();
+  const { id } = req.params;
+  if (!nome) return res.status(400).json({ error: "Nome obrigatório" });
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    // evitar duplicados
+    const dup = await client.query(
+      "select id from alunos where nome = $1 and id <> $2 limit 1",
+      [nome, id]
+    );
+    if (dup.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ error: "Já existe aluno com esse nome" });
+    }
+    const updated = await client.query(
+      "update alunos set nome = $1 where id = $2 returning id, nome, created_at",
+      [nome, id]
+    );
+    await client.query("COMMIT");
+    if (!updated.rows.length)
+      return res.status(404).json({ error: "Aluno não encontrado" });
+    res.json({ ok: true, data: updated.rows[0] });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error(err);
+    res.status(500).json({ error: "Erro ao atualizar aluno" });
+  } finally {
+    client.release();
+  }
+});
+
+app.delete("/alunos/:id", async (req, res) => {
+  const { id } = req.params;
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query("delete from treinos where aluno_id = $1", [id]);
+    const del = await client.query("delete from alunos where id = $1", [id]);
+    await client.query("COMMIT");
+    if (del.rowCount === 0)
+      return res.status(404).json({ error: "Aluno não encontrado" });
+    res.json({ ok: true });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error(err);
+    res.status(500).json({ error: "Erro ao excluir aluno" });
+  } finally {
+    client.release();
+  }
+});
+
 app.post("/treinos", async (req, res) => {
   const { aluno, treino } = req.body || {};
   const nome = (aluno || "").trim();
