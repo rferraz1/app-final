@@ -1,7 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Visualizacao from "./Visualizacao.jsx";
-
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
+import {
+  listarAlunos,
+  listarTreinos,
+  renomearAluno,
+  excluirAluno,
+  salvarAluno,
+} from "./firebase";
 
 export default function App() {
   const [busca, setBusca] = useState("");
@@ -111,31 +116,13 @@ export default function App() {
     });
   };
 
-  // CARREGA TREINOS SALVOS (para copiar de um aluno para outro)
-  const carregarSalvos = async () => {
-    setCarregandoSalvos(true);
-    setErroSalvos("");
-    try {
-      const res = await fetch(`${API_BASE}/treinos`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      setSalvos(json.data || []);
-    } catch (err) {
-      console.error(err);
-      setErroSalvos("Não foi possível carregar treinos salvos.");
-    } finally {
-      setCarregandoSalvos(false);
-    }
-  };
-
+  // CARREGA ALUNOS E TREINOS (Firestore)
   const carregarAlunos = async () => {
     setCarregandoAlunos(true);
     setErroAlunos("");
     try {
-      const res = await fetch(`${API_BASE}/alunos`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      setAlunos(json.data || []);
+      const lista = await listarAlunos();
+      setAlunos(lista);
     } catch (err) {
       console.error(err);
       setErroAlunos("Não foi possível carregar alunos.");
@@ -144,8 +131,22 @@ export default function App() {
     }
   };
 
+  const carregarTreinos = async (alunoId) => {
+    if (!alunoId) return;
+    setCarregandoSalvos(true);
+    setErroSalvos("");
+    try {
+      const lista = await listarTreinos(alunoId);
+      setSalvos(lista);
+    } catch (err) {
+      console.error(err);
+      setErroSalvos("Não foi possível carregar treinos salvos.");
+    } finally {
+      setCarregandoSalvos(false);
+    }
+  };
+
   useEffect(() => {
-    carregarSalvos();
     carregarAlunos();
   }, []);
 
@@ -154,21 +155,12 @@ export default function App() {
       setAlunoSelecionadoId(alunos[0].id);
       setNomeAluno((prev) => prev || alunos[0].nome);
     }
+    if (alunoSelecionadoId) {
+      carregarTreinos(alunoSelecionadoId);
+    }
   }, [alunos, alunoSelecionadoId]);
 
-  const treinosPorAluno = useMemo(() => {
-    return salvos.reduce((acc, t) => {
-      const key = t.aluno_id || t.aluno_nome || t.aluno || "sem-id";
-      if (!acc[key]) acc[key] = [];
-      acc[key].push(t);
-      return acc;
-    }, {});
-  }, [salvos]);
-
-  const treinosDoSelecionado = useMemo(
-    () => treinosPorAluno[alunoSelecionadoId] || [],
-    [treinosPorAluno, alunoSelecionadoId]
-  );
+  const treinosDoSelecionado = useMemo(() => salvos, [salvos]);
 
   const aplicarTreinoSalvo = (treino) => {
     if (!treino) return;
@@ -230,24 +222,18 @@ export default function App() {
               setMsgAluno("");
               setSalvandoAluno(true);
               try {
-                const res = await fetch(`${API_BASE}/alunos`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ nome: nomeAluno }),
-                });
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const js = await res.json();
-            setMsgAluno(
-              js.existed
-                ? "Aluno já existia (ok)."
-                : "Aluno salvo com sucesso."
-            );
-            carregarAlunos();
-          } catch (err) {
-            setMsgAluno("Erro ao salvar aluno.");
-          } finally {
-            setSalvandoAluno(false);
-          }
+                const resp = await salvarAluno(nomeAluno);
+                setMsgAluno(
+                  resp.existed
+                    ? "Aluno já existia (ok)."
+                    : "Aluno salvo com sucesso."
+                );
+                await carregarAlunos();
+              } catch (err) {
+                setMsgAluno("Erro ao salvar aluno.");
+              } finally {
+                setSalvandoAluno(false);
+              }
             }}
             className="px-4 py-2.5 bg-gray-900 text-white rounded-xl text-sm shadow-sm hover:bg-black transition disabled:opacity-50"
             disabled={salvandoAluno}
@@ -403,15 +389,15 @@ export default function App() {
                 </h3>
               </div>
               <button
-                  onClick={() => {
-                    carregarAlunos();
-                    carregarSalvos();
-                  }}
-                  className="text-sm text-blue-600 hover:text-blue-700"
+                onClick={() => {
+                  carregarAlunos();
+                  if (alunoSelecionadoId) carregarTreinos(alunoSelecionadoId);
+                }}
+                className="text-sm text-blue-600 hover:text-blue-700"
               >
-                  {carregandoAlunos || carregandoSalvos
-                    ? "Atualizando..."
-                    : "Atualizar"}
+                {carregandoAlunos || carregandoSalvos
+                  ? "Atualizando..."
+                  : "Atualizar"}
               </button>
             </div>
 
@@ -450,17 +436,16 @@ export default function App() {
                     <div className="flex gap-2">
                       <button
                         className="text-xs px-2 py-1 border border-gray-200 rounded-lg hover:border-gray-300"
-                        onClick={async () => {
+                        onClick={async (e) => {
+                          e.stopPropagation();
                           const novo = prompt("Novo nome do aluno:", a.nome);
                           if (!novo || !novo.trim()) return;
                           try {
-                            const res = await fetch(`${API_BASE}/alunos/${a.id}`, {
-                              method: "PUT",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ nome: novo }),
-                            });
-                            if (!res.ok) throw new Error();
+                            await renomearAluno(a.id, novo.trim());
                             await carregarAlunos();
+                            if (alunoSelecionadoId === a.id) {
+                              setNomeAluno(novo.trim());
+                            }
                             setMsgAluno("Aluno atualizado.");
                           } catch {
                             setMsgAluno("Erro ao atualizar aluno.");
@@ -471,17 +456,20 @@ export default function App() {
                       </button>
                       <button
                         className="text-xs px-2 py-1 border border-red-200 text-red-600 rounded-lg hover:border-red-300"
-                        onClick={async () => {
+                        onClick={async (e) => {
+                          e.stopPropagation();
                           const ok = confirm(
                             "Excluir aluno e treinos vinculados?"
                           );
                           if (!ok) return;
                           try {
-                            const res = await fetch(`${API_BASE}/alunos/${a.id}`, {
-                              method: "DELETE",
-                            });
-                            if (!res.ok) throw new Error();
-                            await Promise.all([carregarAlunos(), carregarSalvos()]);
+                            await excluirAluno(a.id);
+                            await carregarAlunos();
+                            setSalvos([]);
+                            if (alunoSelecionadoId === a.id) {
+                              setAlunoSelecionadoId("");
+                              setNomeAluno("");
+                            }
                             setMsgAluno("Aluno excluído.");
                           } catch {
                             setMsgAluno("Erro ao excluir aluno.");
