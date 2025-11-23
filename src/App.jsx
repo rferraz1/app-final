@@ -124,6 +124,13 @@ export default function App() {
     carregarSalvos();
   }, []);
 
+  const agrupadosPorAluno = salvos.reduce((acc, t) => {
+    const aluno = t.aluno || "Sem nome";
+    if (!acc[aluno]) acc[aluno] = [];
+    acc[aluno].push(t);
+    return acc;
+  }, {});
+
   const aplicarTreinoSalvo = (treino) => {
     if (!treino) return;
     setNomeAluno(treino.aluno || "");
@@ -142,6 +149,7 @@ export default function App() {
         selecionados={selecionados}
         nomeAluno={nomeAluno}
         voltar={() => setVisualizando(false)}
+        onSalvar={() => carregarSalvos()}
         editarReps={(idx, val) => {
           const id = selecionados[idx]?.id;
           if (id) editarReps(id, val);
@@ -327,27 +335,36 @@ export default function App() {
               <p className="text-sm text-red-600 mb-2">{erroSalvos}</p>
             )}
 
-            <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
-              {salvos.map((t) => (
-                <div
-                  key={t.id}
-                  className="p-3 border border-gray-200 rounded-xl hover:border-gray-300 transition cursor-pointer"
-                  onClick={() => aplicarTreinoSalvo(t)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">
-                        {t.aluno}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {Array.isArray(t.treino) ? `${t.treino.length} exercícios` : "Sem dados"}
-                      </p>
-                    </div>
-                    <span className="text-xs text-gray-400">
-                      {t.created_at
-                        ? new Date(t.created_at).toLocaleDateString("pt-BR")
-                        : ""}
+            <div className="space-y-4 max-h-72 overflow-y-auto pr-1">
+              {Object.entries(agrupadosPorAluno).map(([aluno, treinos]) => (
+                <div key={aluno} className="border border-gray-200 rounded-2xl p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-semibold text-gray-900">{aluno}</p>
+                    <span className="text-xs text-gray-500">
+                      {treinos.length} treino(s)
                     </span>
+                  </div>
+                  <div className="space-y-2">
+                    {treinos.map((t) => (
+                      <div
+                        key={t.id}
+                        className="p-2 border border-gray-200 rounded-xl hover:border-gray-300 transition cursor-pointer"
+                        onClick={() => aplicarTreinoSalvo(t)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-gray-700">
+                            {Array.isArray(t.treino)
+                              ? `${t.treino.length} exercícios`
+                              : "Sem dados"}
+                          </p>
+                          <span className="text-[11px] text-gray-400">
+                            {t.created_at
+                              ? new Date(t.created_at).toLocaleDateString("pt-BR")
+                              : ""}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}

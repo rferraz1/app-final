@@ -4,6 +4,7 @@ export default function Visualizacao({
   selecionados = [],
   nomeAluno = "",
   voltar = () => {},
+  onSalvar = () => {},
   editarReps = () => {},
   editarCarga = () => {}
 }) {
@@ -103,6 +104,14 @@ ${bloco}
   // 🔥 SALVA NO BACKEND (Netlify Function + Supabase REST)
   // ==========================================================
   const salvarTreino = async () => {
+    if (!nomeAluno.trim()) {
+      setSaveMsg("Informe o nome do aluno antes de salvar.");
+      return;
+    }
+    if (!selecionados.length) {
+      setSaveMsg("Adicione exercícios antes de salvar.");
+      return;
+    }
     setSaving(true);
     setSaveMsg("");
     try {
@@ -120,6 +129,7 @@ ${bloco}
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setSaveMsg("Treino salvo com sucesso ✅");
+      onSalvar();
     } catch (err) {
       console.error(err);
       setSaveMsg("Erro ao salvar treino. Verifique configuração do backend.");
