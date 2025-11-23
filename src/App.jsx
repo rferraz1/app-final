@@ -148,18 +148,18 @@ export default function App() {
     carregarAlunos();
   }, []);
 
-  const agrupadosPorAluno = useMemo(() => {
+  const treinosPorAluno = useMemo(() => {
     return salvos.reduce((acc, t) => {
-      const aluno = t.aluno_nome || t.aluno || "Sem nome";
-      if (!acc[aluno]) acc[aluno] = [];
-      acc[aluno].push(t);
+      const key = t.aluno_id || t.aluno_nome || t.aluno || "sem-id";
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(t);
       return acc;
     }, {});
   }, [salvos]);
 
   const aplicarTreinoSalvo = (treino) => {
     if (!treino) return;
-    setNomeAluno(treino.aluno_nome || treino.aluno || "");
+    setNomeAluno((curr) => curr || treino.aluno_nome || treino.aluno || "");
     setSelecionados(
       (treino.treino || []).map((ex, idx) => ({
         ...ex,
@@ -378,103 +378,44 @@ export default function App() {
             Finalizar Treino
           </button>
 
-          {/* Treinos salvos */}
+          {/* Alunos e seus treinos */}
           <div className="pt-4 border-t border-gray-200">
             <div className="flex items-center justify-between mb-3">
               <div>
                 <p className="text-xs uppercase tracking-[0.2em] text-gray-500">
-                  Salvos
+                  Alunos
                 </p>
                 <h3 className="text-lg font-semibold text-gray-900">
-                  Treinos anteriores
+                    Alunos e treinos
                 </h3>
               </div>
               <button
-                onClick={carregarSalvos}
-                className="text-sm text-blue-600 hover:text-blue-700"
+                  onClick={() => {
+                    carregarAlunos();
+                    carregarSalvos();
+                  }}
+                  className="text-sm text-blue-600 hover:text-blue-700"
               >
-                {carregandoSalvos ? "Atualizando..." : "Atualizar"}
+                  {carregandoAlunos || carregandoSalvos
+                    ? "Atualizando..."
+                    : "Atualizar"}
               </button>
-          </div>
+            </div>
 
+            {erroAlunos && (
+              <p className="text-sm text-red-600 mb-2">{erroAlunos}</p>
+            )}
             {erroSalvos && (
               <p className="text-sm text-red-600 mb-2">{erroSalvos}</p>
             )}
 
-            <div className="space-y-4 max-h-72 overflow-y-auto pr-1">
-              {Object.entries(agrupadosPorAluno).map(([aluno, treinos]) => (
-                <details
-                  key={aluno}
-                  className="border border-gray-200 rounded-2xl p-3"
-                  open
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+              {alunos.map((a) => (
+                <div
+                  key={a.id}
+                  className="p-3 border border-gray-200 rounded-xl"
                 >
-                  <summary className="flex items-center justify-between cursor-pointer list-none">
-                    <p className="text-sm font-semibold text-gray-900">{aluno}</p>
-                    <span className="text-xs text-gray-500">
-                      {treinos.length} treino(s)
-                    </span>
-                  </summary>
-                  <div className="space-y-2 mt-2">
-                    {treinos.map((t) => (
-                      <div
-                        key={t.id}
-                        className="p-2 border border-gray-200 rounded-xl hover:border-gray-300 transition cursor-pointer"
-                        onClick={() => aplicarTreinoSalvo(t)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs text-gray-700">
-                            {Array.isArray(t.treino)
-                              ? `${t.treino.length} exercícios`
-                              : "Sem dados"}
-                          </p>
-                          <span className="text-[11px] text-gray-400">
-                            {t.created_at
-                              ? new Date(t.created_at).toLocaleDateString("pt-BR")
-                              : ""}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </details>
-              ))}
-
-              {!carregandoSalvos && !salvos.length && (
-                <p className="text-sm text-gray-500">
-                  Nenhum treino salvo ainda.
-                </p>
-              )}
-            </div>
-
-            {/* Lista de alunos */}
-            <div className="mt-6 pt-4 border-t border-gray-200">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-gray-500">
-                    Alunos
-                  </p>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Lista de alunos
-                  </h3>
-                </div>
-                <button
-                  onClick={carregarAlunos}
-                  className="text-sm text-blue-600 hover:text-blue-700"
-                >
-                  {carregandoAlunos ? "Atualizando..." : "Atualizar"}
-                </button>
-              </div>
-
-              {erroAlunos && (
-                <p className="text-sm text-red-600 mb-2">{erroAlunos}</p>
-              )}
-
-              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                {alunos.map((a) => (
-                  <div
-                    key={a.id}
-                    className="p-2 border border-gray-200 rounded-xl flex items-center justify-between"
-                  >
+                  <div className="flex items-center justify-between gap-2">
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-gray-900">
                         {a.nome}
@@ -488,9 +429,7 @@ export default function App() {
                     <div className="flex gap-2">
                       <button
                         className="text-xs px-2 py-1 border border-gray-200 rounded-lg hover:border-gray-300"
-                        onClick={() => {
-                          setNomeAluno(a.nome);
-                        }}
+                        onClick={() => setNomeAluno(a.nome)}
                       >
                         Usar
                       </button>
@@ -538,12 +477,46 @@ export default function App() {
                       </button>
                     </div>
                   </div>
-                ))}
 
-                {!carregandoAlunos && !alunos.length && (
-                  <p className="text-sm text-gray-500">Nenhum aluno cadastrado.</p>
-                )}
-              </div>
+                  <div className="mt-3 space-y-2">
+                    {(treinosPorAluno[a.id] || []).map((t) => (
+                      <div
+                        key={t.id}
+                        className="p-2 border border-gray-200 rounded-xl hover:border-gray-300 transition"
+                      >
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-gray-700">
+                            {Array.isArray(t.treino)
+                              ? `${t.treino.length} exercícios`
+                              : "Sem dados"}
+                          </p>
+                          <span className="text-[11px] text-gray-400">
+                            {t.created_at
+                              ? new Date(t.created_at).toLocaleDateString("pt-BR")
+                              : ""}
+                          </span>
+                        </div>
+                        <button
+                          className="mt-2 text-xs px-3 py-1 border border-gray-200 rounded-lg hover:border-gray-300"
+                          onClick={() => aplicarTreinoSalvo(t)}
+                        >
+                          Aplicar treino
+                        </button>
+                      </div>
+                    ))}
+
+                    {!(treinosPorAluno[a.id] || []).length && (
+                      <p className="text-xs text-gray-500">
+                        Nenhum treino salvo para este aluno.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {!carregandoAlunos && !alunos.length && (
+                <p className="text-sm text-gray-500">Nenhum aluno cadastrado.</p>
+              )}
             </div>
           </div>
         </section>
