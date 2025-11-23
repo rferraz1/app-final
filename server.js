@@ -24,7 +24,9 @@ app.use(express.json({ limit: "1mb" }));
 async function ensureTables() {
   const client = await pool.connect();
   try {
+    // habilita extensões de UUID (compatível com Neon/Render)
     await client.query(`create extension if not exists "pgcrypto";`);
+    await client.query(`create extension if not exists "uuid-ossp";`);
     await client.query(`
       create table if not exists alunos (
         id uuid primary key default gen_random_uuid(),
@@ -175,8 +177,8 @@ app.post("/treinos", async (req, res) => {
     res.json({ ok: true, data: inserted.rows[0] });
   } catch (err) {
     await client.query("ROLLBACK");
-    console.error(err);
-    res.status(500).json({ error: "Erro ao salvar treino" });
+    console.error("Erro ao salvar treino:", err);
+    res.status(500).json({ error: err.message || "Erro ao salvar treino" });
   } finally {
     client.release();
   }
