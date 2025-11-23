@@ -8,6 +8,8 @@ export default function Visualizacao({
   editarCarga = () => {}
 }) {
   const [obs, setObs] = useState(selecionados.map(() => ""));
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState("");
 
   // ==========================================================
   // 🔥 GERA O HTML FINAL PARA DOWNLOAD (usa URL remota da GIF)
@@ -98,6 +100,35 @@ ${bloco}
   };
 
   // ==========================================================
+  // 🔥 SALVA NO BACKEND (Netlify Function + Supabase REST)
+  // ==========================================================
+  const salvarTreino = async () => {
+    setSaving(true);
+    setSaveMsg("");
+    try {
+      const res = await fetch("/.netlify/functions/trainings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          aluno: nomeAluno || "Aluno",
+          treino: selecionados.map((ex, idx) => ({
+            ...ex,
+            observacao: obs[idx] || "",
+          })),
+        }),
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setSaveMsg("Treino salvo com sucesso ✅");
+    } catch (err) {
+      console.error(err);
+      setSaveMsg("Erro ao salvar treino. Verifique configuração do backend.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ==========================================================
   // 🔥 3 — VISUALIZAÇÃO NA TELA
   // ==========================================================
   return (
@@ -167,12 +198,24 @@ ${bloco}
           </button>
 
           <button
+            onClick={salvarTreino}
+            disabled={saving || !selecionados.length}
+            className="px-6 py-3 text-sm bg-gray-900 text-white rounded-xl shadow-sm hover:bg-black transition disabled:opacity-50"
+          >
+            {saving ? "Salvando..." : "Salvar treino"}
+          </button>
+
+          <button
             onClick={gerarHTML}
             className="px-6 py-3 text-sm bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-500/15 hover:bg-blue-700 transition"
           >
             Exportar treino
           </button>
         </div>
+
+        {saveMsg && (
+          <p className="text-center text-sm text-gray-600 mt-4">{saveMsg}</p>
+        )}
       </div>
     </div>
   );
