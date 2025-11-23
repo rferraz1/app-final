@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 export default function Visualizacao({
   selecionados = [],
@@ -115,7 +116,7 @@ ${bloco}
     setSaving(true);
     setSaveMsg("");
     try {
-      const res = await fetch("/.netlify/functions/trainings", {
+      const res = await fetch(`${API_BASE}/treinos`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

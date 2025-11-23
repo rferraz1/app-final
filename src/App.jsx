@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Visualizacao from "./Visualizacao.jsx";
+
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 export default function App() {
   const [busca, setBusca] = useState("");
@@ -110,7 +112,7 @@ export default function App() {
     setCarregandoSalvos(true);
     setErroSalvos("");
     try {
-      const res = await fetch("/.netlify/functions/trainings");
+      const res = await fetch(`${API_BASE}/treinos`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       setSalvos(json.data || []);
@@ -126,12 +128,14 @@ export default function App() {
     carregarSalvos();
   }, []);
 
-  const agrupadosPorAluno = salvos.reduce((acc, t) => {
-    const aluno = t.aluno || "Sem nome";
-    if (!acc[aluno]) acc[aluno] = [];
-    acc[aluno].push(t);
-    return acc;
-  }, {});
+  const agrupadosPorAluno = useMemo(() => {
+    return salvos.reduce((acc, t) => {
+      const aluno = t.aluno_nome || t.aluno || "Sem nome";
+      if (!acc[aluno]) acc[aluno] = [];
+      acc[aluno].push(t);
+      return acc;
+    }, {});
+  }, [salvos]);
 
   const aplicarTreinoSalvo = (treino) => {
     if (!treino) return;
@@ -193,7 +197,7 @@ export default function App() {
               setMsgAluno("");
               setSalvandoAluno(true);
               try {
-                const res = await fetch("/.netlify/functions/students", {
+                const res = await fetch(`${API_BASE}/alunos`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ nome: nomeAluno }),
