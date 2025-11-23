@@ -140,7 +140,7 @@ export default function App() {
         />
       </header>
 
-      <main className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 p-6 lg:p-10">
+      <main className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[1.8fr_1fr] gap-8 p-6 lg:p-10">
         {/* BUSCA */}
         <section className="lg:col-span-2 bg-white/80 backdrop-blur border border-gray-200 rounded-3xl shadow-sm p-6 lg:p-8">
           <div className="flex items-center justify-between gap-4">
@@ -164,14 +164,14 @@ export default function App() {
           </div>
 
           {/* RESULTADOS */}
-          <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+          <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
             {resultados.map((ex) => (
               <div
                 key={ex.key}
                 className="group cursor-pointer border border-gray-200 p-3 rounded-2xl shadow-sm hover:shadow-lg transition bg-white"
                 onClick={() => adicionar(ex)}
               >
-                <div className="h-28 w-full flex items-center justify-center overflow-hidden rounded-xl bg-gray-100">
+                <div className="h-36 w-full flex items-center justify-center overflow-hidden rounded-xl bg-gray-100">
                   <img src={ex.file} alt={ex.nome} className="max-h-full" />
                 </div>
 
