@@ -185,7 +185,7 @@ export default function App() {
         </section>
 
         {/* TREINO */}
-        <section className="bg-white/80 backdrop-blur border border-gray-200 rounded-3xl shadow-sm p-6 lg:p-7">
+        <section className="bg-white/80 backdrop-blur border border-gray-200 rounded-3xl shadow-sm p-6 lg:p-7 lg:sticky lg:top-6 self-start">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-gray-500">
