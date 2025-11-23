@@ -121,28 +121,42 @@ export default function App() {
 
   // TELA PRINCIPAL
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm p-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">Criador de Treinos</h1>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50">
+      <header className="bg-white/80 backdrop-blur border-b border-gray-200 px-6 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm uppercase tracking-[0.25em] text-gray-500">
+            Studio Ferraz
+          </p>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            Criador de Treinos
+          </h1>
+        </div>
 
         <input
-          className="border px-3 py-2 rounded-lg text-sm"
-          placeholder="Nome do aluno..."
+          className="border border-gray-200 px-4 py-2.5 rounded-xl text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500 min-w-[240px]"
+          placeholder="Nome do aluno"
           value={nomeAluno}
           onChange={(e) => setNomeAluno(e.target.value)}
         />
       </header>
 
-      <main className="grid grid-cols-1 lg:grid-cols-3 gap-8 p-6">
+      <main className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 p-6 lg:p-10">
         {/* BUSCA */}
-        <section className="lg:col-span-2 bg-white border rounded-2xl shadow-sm p-6">
-          <label className="block text-sm font-medium text-gray-700">
-            Buscar exercícios
-          </label>
+        <section className="lg:col-span-2 bg-white/80 backdrop-blur border border-gray-200 rounded-3xl shadow-sm p-6 lg:p-8">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-gray-500">
+                Biblioteca
+              </p>
+              <h2 className="text-xl font-semibold text-gray-900">
+                Buscar exercícios
+              </h2>
+            </div>
+          </div>
 
-          <div className="mt-3 flex flex-col sm:flex-row gap-3">
+          <div className="mt-5 flex flex-col sm:flex-row gap-3">
             <input
-              className="border px-3 py-2 rounded-lg flex-1"
+              className="border border-gray-200 px-4 py-3 rounded-2xl flex-1 text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500 transition"
               placeholder="Digite 'rosca', 'supino', 'agachamento'..."
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
@@ -150,57 +164,71 @@ export default function App() {
           </div>
 
           {/* RESULTADOS */}
-          <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+          <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-5">
             {resultados.map((ex) => (
               <div
                 key={ex.key}
-                className="cursor-pointer border p-3 rounded-xl shadow-sm hover:shadow-md transition bg-white"
+                className="group cursor-pointer border border-gray-200 p-3 rounded-2xl shadow-sm hover:shadow-lg transition bg-white"
                 onClick={() => adicionar(ex)}
               >
-                <div className="h-28 w-full flex items-center justify-center overflow-hidden rounded-lg bg-gray-100">
+                <div className="h-28 w-full flex items-center justify-center overflow-hidden rounded-xl bg-gray-100">
                   <img src={ex.file} alt={ex.nome} className="max-h-full" />
                 </div>
 
-                <h3 className="mt-2 text-sm font-medium text-gray-800 line-clamp-2">
+                <h3 className="mt-3 text-sm font-semibold text-gray-900 line-clamp-2 leading-5">
                   {ex.nome}
                 </h3>
+                <p className="text-xs text-gray-500 mt-1">{ex.grupo}</p>
               </div>
             ))}
           </div>
         </section>
 
         {/* TREINO */}
-        <section className="bg-white border rounded-2xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-800">
-            Treino Selecionado
-          </h2>
+        <section className="bg-white/80 backdrop-blur border border-gray-200 rounded-3xl shadow-sm p-6 lg:p-7">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-gray-500">
+                Montagem
+              </p>
+              <h2 className="text-xl font-semibold text-gray-900">
+                Treino Selecionado
+              </h2>
+            </div>
+            <span className="text-sm text-gray-500">
+              {selecionados.length} itens
+            </span>
+          </div>
 
-          <div className="mt-4 space-y-4">
+          <div className="mt-5 space-y-4">
             {selecionados.map((s, i) => (
-              <div key={s.id} className="border rounded-xl p-3 shadow-sm bg-gray-50">
+              <div
+                key={s.id}
+                className="border border-gray-200 rounded-2xl p-3 shadow-sm bg-gray-50/80"
+              >
                 <div className="flex items-center gap-3">
                   <img
-                    className="w-20 h-20 rounded-lg object-contain bg-white"
+                    className="w-20 h-20 rounded-xl object-contain bg-white border border-gray-200"
                     src={s.file}
                     alt={s.nome}
                   />
 
                   <div className="flex-1">
                     <input
-                      className="w-full border px-2 py-1 rounded-lg mb-1"
+                      className="w-full border border-gray-200 px-3 py-2 rounded-xl mb-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500"
                       value={s.nome}
                       onChange={(e) => editarNome(s.id, e.target.value)}
                     />
 
                     <div className="flex gap-2">
                       <input
-                        className="border px-2 py-1 rounded-lg w-20"
+                        className="border border-gray-200 px-3 py-2 rounded-xl w-24 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500"
                         placeholder="Reps"
                         value={s.reps}
                         onChange={(e) => editarReps(s.id, e.target.value)}
                       />
                       <input
-                        className="border px-2 py-1 rounded-lg w-20"
+                        className="border border-gray-200 px-3 py-2 rounded-xl w-24 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500"
                         placeholder="Carga"
                         value={s.carga}
                         onChange={(e) => editarCarga(s.id, e.target.value)}
@@ -210,19 +238,19 @@ export default function App() {
 
                   <div className="flex flex-col gap-2">
                     <button
-                      className="px-2 py-1 bg-gray-200 rounded-md"
+                      className="px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-gray-700 hover:border-gray-300 transition"
                       onClick={() => mover(i, -1)}
                     >
                       ↑
                     </button>
                     <button
-                      className="px-2 py-1 bg-gray-200 rounded-md"
+                      className="px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-gray-700 hover:border-gray-300 transition"
                       onClick={() => mover(i, 1)}
                     >
                       ↓
                     </button>
                     <button
-                      className="px-2 py-1 bg-red-500 text-white rounded-md"
+                      className="px-2.5 py-1.5 bg-red-500 text-white rounded-lg shadow-sm hover:bg-red-600 transition"
                       onClick={() => remover(s.id)}
                     >
                       X
@@ -235,7 +263,7 @@ export default function App() {
 
           <button
             disabled={!selecionados.length}
-            className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold transition disabled:opacity-50"
+            className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-2xl font-semibold transition disabled:opacity-50 shadow-lg shadow-blue-500/10"
             onClick={() => setVisualizando(true)}
           >
             Finalizar Treino

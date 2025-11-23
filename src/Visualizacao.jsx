@@ -101,17 +101,22 @@ ${bloco}
   // 🔥 3 — VISUALIZAÇÃO NA TELA
   // ==========================================================
   return (
-    <div className="min-h-screen w-[90%] mx-auto py-10">
-      <div className="max-w-4xl mx-auto bg-white border border-gray-200 shadow-sm rounded-2xl p-8">
-        <h2 className="text-3xl font-semibold text-center mb-6">
-          Treino de {nomeAluno}
-        </h2>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50 py-10">
+      <div className="max-w-4xl mx-auto bg-white/85 backdrop-blur border border-gray-200 shadow-sm rounded-3xl p-8">
+        <div className="text-center mb-6">
+          <p className="text-xs uppercase tracking-[0.2em] text-gray-500">
+            Treino personalizado
+          </p>
+          <h2 className="text-3xl font-semibold text-gray-900">
+            {nomeAluno || "Aluno"}
+          </h2>
+        </div>
 
         <div className="space-y-6">
           {selecionados.map((ex, idx) => (
             <div
               key={ex.id}
-              className="p-5 border border-gray-200 rounded-2xl shadow-md bg-white"
+              className="p-5 border border-gray-200 rounded-2xl shadow-md bg-white/90"
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
@@ -119,14 +124,14 @@ ${bloco}
                     {idx + 1}
                   </div>
 
-                  <div className="text-lg font-medium">{ex.nome}</div>
+                  <div className="text-lg font-semibold text-gray-900">{ex.nome}</div>
                 </div>
 
                 <input
                   type="text"
                   defaultValue={ex.reps || "3x10 rep"}
                   onChange={(e) => editarReps(idx, e.target.value)}
-                  className="border border-gray-300 rounded-md px-3 py-1 text-sm w-28 text-center"
+                  className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm w-28 text-center focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500"
                 />
               </div>
 
@@ -138,7 +143,7 @@ ${bloco}
                   novas[idx] = e.target.value;
                   setObs(novas);
                 }}
-                className="w-full border border-gray-300 rounded-md p-2 text-sm mb-4"
+                className="w-full border border-gray-200 rounded-xl p-3 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500"
                 rows={2}
               />
 
@@ -146,7 +151,7 @@ ${bloco}
                 <img
                   src={ex.file}
                   alt={ex.nome}
-                  className="w-28 h-28 object-contain border rounded-xl bg-gray-50"
+                  className="w-28 h-28 object-contain border border-gray-200 rounded-xl bg-gray-50"
                 />
               </div>
             </div>
@@ -156,14 +161,14 @@ ${bloco}
         <div className="flex justify-center gap-4 mt-8">
           <button
             onClick={voltar}
-            className="px-6 py-3 text-sm bg-gray-100 border border-gray-300 rounded-xl hover:bg-gray-200 transition"
+            className="px-6 py-3 text-sm bg-gray-100 border border-gray-200 rounded-xl hover:bg-gray-200 transition"
           >
             Voltar
           </button>
 
           <button
             onClick={gerarHTML}
-            className="px-6 py-3 text-sm bg-black text-white rounded-xl"
+            className="px-6 py-3 text-sm bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-500/15 hover:bg-blue-700 transition"
           >
             Exportar treino
           </button>
