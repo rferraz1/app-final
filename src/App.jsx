@@ -11,6 +11,8 @@ export default function App() {
   const [salvos, setSalvos] = useState([]);
   const [carregandoSalvos, setCarregandoSalvos] = useState(false);
   const [erroSalvos, setErroSalvos] = useState("");
+  const [salvandoAluno, setSalvandoAluno] = useState(false);
+  const [msgAluno, setMsgAluno] = useState("");
 
   // REMOVE ACENTOS / NORMALIZA
   function normalizar(texto) {
@@ -133,7 +135,7 @@ export default function App() {
 
   const aplicarTreinoSalvo = (treino) => {
     if (!treino) return;
-    setNomeAluno(treino.aluno || "");
+    setNomeAluno(treino.aluno_nome || treino.aluno || "");
     setSelecionados(
       (treino.treino || []).map((ex, idx) => ({
         ...ex,
@@ -175,13 +177,52 @@ export default function App() {
           </h1>
         </div>
 
-        <input
-          className="border border-gray-200 px-4 py-2.5 rounded-xl text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500 min-w-[240px]"
-          placeholder="Nome do aluno"
-          value={nomeAluno}
-          onChange={(e) => setNomeAluno(e.target.value)}
-        />
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+          <input
+            className="border border-gray-200 px-4 py-2.5 rounded-xl text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500 min-w-[240px]"
+            placeholder="Nome do aluno"
+            value={nomeAluno}
+            onChange={(e) => setNomeAluno(e.target.value)}
+          />
+          <button
+            onClick={async () => {
+              if (!nomeAluno.trim()) {
+                setMsgAluno("Informe um nome.");
+                return;
+              }
+              setMsgAluno("");
+              setSalvandoAluno(true);
+              try {
+                const res = await fetch("/.netlify/functions/students", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ nome: nomeAluno }),
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const js = await res.json();
+                setMsgAluno(
+                  js.existed
+                    ? "Aluno já existia (ok)."
+                    : "Aluno salvo com sucesso."
+                );
+              } catch (err) {
+                setMsgAluno("Erro ao salvar aluno.");
+              } finally {
+                setSalvandoAluno(false);
+              }
+            }}
+            className="px-4 py-2.5 bg-gray-900 text-white rounded-xl text-sm shadow-sm hover:bg-black transition disabled:opacity-50"
+            disabled={salvandoAluno}
+          >
+            {salvandoAluno ? "Salvando..." : "Salvar aluno"}
+          </button>
+        </div>
       </header>
+      {msgAluno && (
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+          <p className="text-sm text-gray-600 mt-1">{msgAluno}</p>
+        </div>
+      )}
 
       <main className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[1.8fr_1fr] gap-8 p-6 lg:p-10">
         {/* BUSCA */}
@@ -329,7 +370,7 @@ export default function App() {
               >
                 {carregandoSalvos ? "Atualizando..." : "Atualizar"}
               </button>
-            </div>
+          </div>
 
             {erroSalvos && (
               <p className="text-sm text-red-600 mb-2">{erroSalvos}</p>
@@ -337,14 +378,18 @@ export default function App() {
 
             <div className="space-y-4 max-h-72 overflow-y-auto pr-1">
               {Object.entries(agrupadosPorAluno).map(([aluno, treinos]) => (
-                <div key={aluno} className="border border-gray-200 rounded-2xl p-3">
-                  <div className="flex items-center justify-between mb-2">
+                <details
+                  key={aluno}
+                  className="border border-gray-200 rounded-2xl p-3"
+                  open
+                >
+                  <summary className="flex items-center justify-between cursor-pointer list-none">
                     <p className="text-sm font-semibold text-gray-900">{aluno}</p>
                     <span className="text-xs text-gray-500">
                       {treinos.length} treino(s)
                     </span>
-                  </div>
-                  <div className="space-y-2">
+                  </summary>
+                  <div className="space-y-2 mt-2">
                     {treinos.map((t) => (
                       <div
                         key={t.id}
@@ -366,7 +411,7 @@ export default function App() {
                       </div>
                     ))}
                   </div>
-                </div>
+                </details>
               ))}
 
               {!carregandoSalvos && !salvos.length && (
