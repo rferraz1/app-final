@@ -179,6 +179,7 @@ export default function App() {
       <Visualizacao
         selecionados={selecionados}
         nomeAluno={nomeAluno}
+        alunoId={alunoSelecionadoId}
         voltar={() => setVisualizando(false)}
         onSalvar={() => carregarSalvos()}
         editarReps={(idx, val) => {
@@ -229,6 +230,7 @@ export default function App() {
                     : "Aluno salvo com sucesso."
                 );
                 await carregarAlunos();
+                setAlunoSelecionadoId(resp.id);
               } catch (err) {
                 setMsgAluno("Erro ao salvar aluno.");
               } finally {
@@ -521,7 +523,10 @@ export default function App() {
                     </div>
                     <button
                       className="mt-2 text-xs px-3 py-1 border border-gray-200 rounded-lg hover:border-gray-300"
-                      onClick={() => aplicarTreinoSalvo(t)}
+                      onClick={() => {
+                        setAlunoSelecionadoId(t.alunoId || alunoSelecionadoId);
+                        aplicarTreinoSalvo(t);
+                      }}
                     >
                       Aplicar treino
                     </button>

@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
+import { salvarTreino as salvarTreinoFB, salvarAluno } from "./firebase";
 
 export default function Visualizacao({
   selecionados = [],
   nomeAluno = "",
+  alunoId = "",
   voltar = () => {},
   onSalvar = () => {},
   editarReps = () => {},
@@ -122,19 +123,21 @@ ${bloco}
     setSaving(true);
     setSaveMsg("");
     try {
-      const res = await fetch(`${API_BASE}/treinos`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          aluno: nomeAluno || "Aluno",
-          treino: selecionados.map((ex, idx) => ({
-            ...ex,
-            observacao: obs[idx] || "",
-          })),
-        }),
-      });
+      let alunoTargetId = alunoId;
+      if (!alunoTargetId) {
+        const respAluno = await salvarAluno(nomeAluno);
+        alunoTargetId = respAluno.id;
+      }
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await salvarTreinoFB(
+        alunoTargetId,
+        nomeAluno,
+        selecionados.map((ex, idx) => ({
+          ...ex,
+          observacao: obs[idx] || "",
+        }))
+      );
+
       setSaveMsg("Treino salvo com sucesso ✅");
       onSalvar();
     } catch (err) {
