@@ -11,6 +11,7 @@ import {
   doc,
   updateDoc,
 } from "firebase/firestore";
+import { getAuth, signInAnonymously } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -23,9 +24,17 @@ const firebaseConfig = {
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
+
+async function ensureAuth() {
+  if (auth.currentUser) return auth.currentUser;
+  const res = await signInAnonymously(auth);
+  return res.user;
+}
 
 // Alunos
 export async function salvarAluno(nome) {
+  await ensureAuth();
   if (!nome.trim()) throw new Error("Nome obrigatório");
 
   // verifica duplicado
@@ -41,16 +50,19 @@ export async function salvarAluno(nome) {
 }
 
 export async function listarAlunos() {
+  await ensureAuth();
   const q = query(collection(db, "alunos"), orderBy("created_at", "desc"));
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
 export async function renomearAluno(id, novoNome) {
+  await ensureAuth();
   await updateDoc(doc(db, "alunos", id), { nome: novoNome });
 }
 
 export async function excluirAluno(id) {
+  await ensureAuth();
   // opcional: apagar treinos ligados a ele
   const treinosQ = query(
     collection(db, "treinos"),
@@ -65,6 +77,7 @@ export async function excluirAluno(id) {
 
 // Treinos
 export async function salvarTreino(alunoId, alunoNome, treino) {
+  await ensureAuth();
   if (!alunoId) throw new Error("Aluno não definido");
   if (!Array.isArray(treino)) throw new Error("Treino inválido");
 
@@ -78,6 +91,7 @@ export async function salvarTreino(alunoId, alunoNome, treino) {
 }
 
 export async function listarTreinos(alunoId) {
+  await ensureAuth();
   if (!alunoId) return [];
   const q = query(
     collection(db, "treinos"),
