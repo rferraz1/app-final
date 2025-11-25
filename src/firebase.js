@@ -93,11 +93,10 @@ export async function salvarTreino(alunoId, alunoNome, treino) {
 export async function listarTreinos(alunoId) {
   await ensureAuth();
   if (!alunoId) return [];
-  const q = query(
-    collection(db, "treinos"),
-    where("alunoId", "==", alunoId),
-    orderBy("created_at", "desc")
-  );
+  const q = query(collection(db, "treinos"), where("alunoId", "==", alunoId));
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  // ordena no cliente para evitar índice composto obrigatório no Firestore
+  return snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
 }

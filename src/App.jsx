@@ -164,7 +164,10 @@ export default function App() {
 
   const aplicarTreinoSalvo = (treino) => {
     if (!treino) return;
-    setNomeAluno((curr) => curr || treino.aluno_nome || treino.aluno || "");
+    setNomeAluno(
+      (curr) =>
+        curr || treino.alunoNome || treino.aluno_nome || treino.aluno || ""
+    );
     setSelecionados(
       (treino.treino || []).map((ex, idx) => ({
         ...ex,
