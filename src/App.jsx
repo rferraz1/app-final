@@ -225,31 +225,22 @@ export default function App() {
         <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
           <div className="relative">
             <input
-              className="border border-gray-200 pr-12 pl-4 py-2.5 rounded-xl text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500 min-w-[240px]"
-              placeholder="Nome do aluno"
+              list="alunos-salvos"
+              className="border border-gray-200 px-4 py-2.5 rounded-xl text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500 min-w-[240px]"
+              placeholder="Nome do aluno (ou escolha abaixo)"
               value={nomeAluno}
               onChange={(e) => {
-                setNomeAluno(e.target.value);
-                setAlunoSelecionadoId("");
+                const val = e.target.value;
+                setNomeAluno(val);
+                const encontrado = alunos.find((a) => a.nome === val);
+                setAlunoSelecionadoId(encontrado ? encontrado.id : "");
               }}
             />
-            <select
-              className="absolute inset-y-0 right-0 w-12 appearance-none bg-transparent border-l border-gray-200 text-gray-500 text-sm px-2 rounded-r-xl focus:outline-none"
-              value={alunoSelecionadoId || ""}
-              onChange={(e) => {
-                const idSel = e.target.value;
-                setAlunoSelecionadoId(idSel);
-                const encontrado = alunos.find((a) => a.id === idSel);
-                if (encontrado) setNomeAluno(encontrado.nome);
-              }}
-            >
-              <option value="">▼</option>
+            <datalist id="alunos-salvos">
               {alunos.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.nome}
-                </option>
+                <option key={a.id} value={a.nome} />
               ))}
-            </select>
+            </datalist>
           </div>
           <button
             onClick={async () => {
