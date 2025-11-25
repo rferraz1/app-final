@@ -129,17 +129,19 @@ ${bloco}
         alunoTargetId = respAluno.id;
       }
 
+      const treinoSalvo = selecionados.map((ex, idx) => ({
+        ...ex,
+        observacao: obs[idx] || "",
+      }));
+
       await salvarTreinoFB(
         alunoTargetId,
         nomeAluno,
-        selecionados.map((ex, idx) => ({
-          ...ex,
-          observacao: obs[idx] || "",
-        }))
+        treinoSalvo
       );
 
       setSaveMsg("Treino salvo com sucesso ✅");
-      await Promise.resolve(onSalvar(alunoTargetId));
+      await Promise.resolve(onSalvar(alunoTargetId, nomeAluno, treinoSalvo));
     } catch (err) {
       console.error(err);
       setSaveMsg("Erro ao salvar treino. Verifique configuração do backend.");

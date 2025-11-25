@@ -173,15 +173,14 @@ export default function App() {
     );
   };
 
-  const aposSalvarTreino = async (idSalvo) => {
+  const aposSalvarTreino = async (idSalvo, nomeSalvo) => {
     const id = idSalvo || alunoSelecionadoId;
     if (!id) return;
     await carregarAlunos();
     await carregarTreinos(id);
     setAlunoSelecionadoId(id);
-    const alunoEncontrado = alunos.find((a) => a.id === id);
-    if (alunoEncontrado) {
-      setNomeAluno(alunoEncontrado.nome);
+    if (nomeSalvo) {
+      setNomeAluno(nomeSalvo);
     }
     setVisualizando(false);
   };
