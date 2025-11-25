@@ -24,6 +24,8 @@ export default function App() {
   const [carregandoAlunos, setCarregandoAlunos] = useState(false);
   const [erroAlunos, setErroAlunos] = useState("");
   const [alunoSelecionadoId, setAlunoSelecionadoId] = useState("");
+  const [treinosExpandidos, setTreinosExpandidos] = useState({});
+  const [destinoTreino, setDestinoTreino] = useState({});
 
   // REMOVE ACENTOS / NORMALIZA
   function normalizar(texto) {
@@ -175,6 +177,12 @@ export default function App() {
       }))
     );
   };
+
+  const toggleTreinoExpand = (id) =>
+    setTreinosExpandidos((prev) => ({ ...prev, [id]: !prev[id] }));
+
+  const setDestino = (treinoId, alunoId) =>
+    setDestinoTreino((prev) => ({ ...prev, [treinoId]: alunoId }));
 
   const aposSalvarTreino = async (idSalvo, nomeSalvo) => {
     const id = idSalvo || alunoSelecionadoId;
@@ -534,6 +542,8 @@ export default function App() {
               <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
                 {treinosDoSelecionado.map((t, idx) => {
                   const exercicios = Array.isArray(t.treino) ? t.treino : [];
+                  const expandido = treinosExpandidos[t.id];
+                  const alunoDestino = destinoTreino[t.id] || t.alunoId || "";
                   return (
                     <div
                       key={t.id}
@@ -550,29 +560,58 @@ export default function App() {
                               : ""}
                           </p>
                         </div>
-                        <button
-                          className="text-xs px-3 py-1 border border-gray-200 rounded-lg hover:border-gray-300"
-                          onClick={() => {
-                            setAlunoSelecionadoId(t.alunoId || alunoSelecionadoId);
-                            aplicarTreinoSalvo(t);
-                          }}
-                        >
-                          Aplicar treino
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            className="text-xs px-3 py-1 border border-gray-200 rounded-lg hover:border-gray-300"
+                            onClick={() => toggleTreinoExpand(t.id)}
+                          >
+                            {expandido ? "Recolher" : "Ver exercícios"}
+                          </button>
+                          <select
+                            className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white"
+                            value={alunoDestino}
+                            onChange={(e) => setDestino(t.id, e.target.value)}
+                          >
+                            <option value={t.alunoId || ""}>
+                              Aplicar em {t.alunoNome || "aluno"}
+                            </option>
+                            {alunos
+                              .filter((a) => a.id !== t.alunoId)
+                              .map((a) => (
+                                <option key={a.id} value={a.id}>
+                                  Aplicar em {a.nome}
+                                </option>
+                              ))}
+                          </select>
+                          <button
+                            className="text-xs px-3 py-1 border border-gray-200 rounded-lg hover:border-gray-300"
+                            onClick={() => {
+                              const alvoId = alunoDestino || t.alunoId || alunoSelecionadoId;
+                              if (alvoId) setAlunoSelecionadoId(alvoId);
+                              const aluno = alunos.find((a) => a.id === alvoId);
+                              if (aluno) setNomeAluno(aluno.nome);
+                              aplicarTreinoSalvo(t);
+                            }}
+                          >
+                            Aplicar treino
+                          </button>
+                        </div>
                       </div>
 
-                      <ul className="mt-3 text-xs text-gray-700 list-disc list-inside space-y-1">
-                        {exercicios.map((ex, i) => (
-                          <li key={`${t.id}-ex-${i}`}>
-                            {ex.nome || `Exercício ${i + 1}`}
-                            {ex.reps ? ` — ${ex.reps}` : ""}
-                            {ex.carga ? ` (${ex.carga})` : ""}
-                          </li>
-                        ))}
-                        {!exercicios.length && (
-                          <li className="text-gray-400">Sem exercícios cadastrados</li>
-                        )}
-                      </ul>
+                      {expandido && (
+                        <ul className="mt-3 text-xs text-gray-700 list-disc list-inside space-y-1">
+                          {exercicios.map((ex, i) => (
+                            <li key={`${t.id}-ex-${i}`}>
+                              {ex.nome || `Exercício ${i + 1}`}
+                              {ex.reps ? ` — ${ex.reps}` : ""}
+                              {ex.carga ? ` (${ex.carga})` : ""}
+                            </li>
+                          ))}
+                          {!exercicios.length && (
+                            <li className="text-gray-400">Sem exercícios cadastrados</li>
+                          )}
+                        </ul>
+                      )}
                     </div>
                   );
                 })}
