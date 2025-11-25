@@ -173,6 +173,19 @@ export default function App() {
     );
   };
 
+  const aposSalvarTreino = async (idSalvo) => {
+    const id = idSalvo || alunoSelecionadoId;
+    if (!id) return;
+    await carregarAlunos();
+    await carregarTreinos(id);
+    setAlunoSelecionadoId(id);
+    const alunoEncontrado = alunos.find((a) => a.id === id);
+    if (alunoEncontrado) {
+      setNomeAluno(alunoEncontrado.nome);
+    }
+    setVisualizando(false);
+  };
+
   // TELA DE VISUALIZAÇÃO
   if (visualizando) {
     return (
@@ -181,7 +194,7 @@ export default function App() {
         nomeAluno={nomeAluno}
         alunoId={alunoSelecionadoId}
         voltar={() => setVisualizando(false)}
-        onSalvar={() => carregarSalvos()}
+        onSalvar={aposSalvarTreino}
         editarReps={(idx, val) => {
           const id = selecionados[idx]?.id;
           if (id) editarReps(id, val);

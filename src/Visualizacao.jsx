@@ -139,7 +139,7 @@ ${bloco}
       );
 
       setSaveMsg("Treino salvo com sucesso ✅");
-      onSalvar();
+      await Promise.resolve(onSalvar(alunoTargetId));
     } catch (err) {
       console.error(err);
       setSaveMsg("Erro ao salvar treino. Verifique configuração do backend.");
