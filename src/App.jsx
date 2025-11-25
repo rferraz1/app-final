@@ -518,35 +518,51 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                {treinosDoSelecionado.map((t) => (
-                  <div
-                    key={t.id}
-                    className="p-2 border border-gray-200 rounded-xl hover:border-gray-300 transition"
-                  >
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs text-gray-700">
-                        {Array.isArray(t.treino)
-                          ? `${t.treino.length} exercícios`
-                          : "Sem dados"}
-                      </p>
-                      <span className="text-[11px] text-gray-400">
-                        {t.created_at
-                          ? new Date(t.created_at).toLocaleDateString("pt-BR")
-                          : ""}
-                      </span>
-                    </div>
-                    <button
-                      className="mt-2 text-xs px-3 py-1 border border-gray-200 rounded-lg hover:border-gray-300"
-                      onClick={() => {
-                        setAlunoSelecionadoId(t.alunoId || alunoSelecionadoId);
-                        aplicarTreinoSalvo(t);
-                      }}
+              <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+                {treinosDoSelecionado.map((t, idx) => {
+                  const exercicios = Array.isArray(t.treino) ? t.treino : [];
+                  return (
+                    <div
+                      key={t.id}
+                      className="p-3 border border-gray-200 rounded-xl hover:border-gray-300 transition bg-white/60"
                     >
-                      Aplicar treino
-                    </button>
-                  </div>
-                ))}
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">
+                            {idx + 1} - {t.alunoNome || t.aluno_nome || "Treino"}
+                          </p>
+                          <p className="text-[11px] text-gray-500">
+                            {t.created_at
+                              ? new Date(t.created_at).toLocaleDateString("pt-BR")
+                              : ""}
+                          </p>
+                        </div>
+                        <button
+                          className="text-xs px-3 py-1 border border-gray-200 rounded-lg hover:border-gray-300"
+                          onClick={() => {
+                            setAlunoSelecionadoId(t.alunoId || alunoSelecionadoId);
+                            aplicarTreinoSalvo(t);
+                          }}
+                        >
+                          Aplicar treino
+                        </button>
+                      </div>
+
+                      <ul className="mt-3 text-xs text-gray-700 list-disc list-inside space-y-1">
+                        {exercicios.map((ex, i) => (
+                          <li key={`${t.id}-ex-${i}`}>
+                            {ex.nome || `Exercício ${i + 1}`}
+                            {ex.reps ? ` — ${ex.reps}` : ""}
+                            {ex.carga ? ` (${ex.carga})` : ""}
+                          </li>
+                        ))}
+                        {!exercicios.length && (
+                          <li className="text-gray-400">Sem exercícios cadastrados</li>
+                        )}
+                      </ul>
+                    </div>
+                  );
+                })}
 
                 {!treinosDoSelecionado.length && (
                   <p className="text-sm text-gray-500">
