@@ -20,13 +20,20 @@ export default function Visualizacao({
   const gerarHTML = async () => {
     const resolveImgSrc = (url) => {
       if (!url) return "";
-      // mantém URL original se já for http/https para evitar duplo encode
-      if (/^https?:\/\//i.test(url)) return url;
-      try {
-        return new URL(url, window.location.origin).toString();
-      } catch {
-        return url;
+      // Absolutiza quando for relativo
+      let full = url;
+      if (!/^https?:\/\//i.test(url)) {
+        try {
+          full = new URL(url, window.location.origin).toString();
+        } catch {
+          full = url;
+        }
       }
+      // Proxy público para contornar bloqueios de CORS/referrer em arquivo baixado
+      const proxied = `https://images.weserv.nl/?url=${encodeURIComponent(
+        full
+      )}`;
+      return proxied;
     };
 
     let bloco = "";
