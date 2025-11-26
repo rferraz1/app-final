@@ -93,19 +93,16 @@ ${bloco}
 </html>
     `;
 
-    const popup = window.open("", "_blank");
-    if (popup && popup.document) {
-      popup.document.write(finalHTML);
-      popup.document.close();
-    } else {
-      // fallback para download
-      const blob = new Blob([finalHTML], { type: "text/html" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `Treino-${nomeAluno}.html`;
-      a.click();
-    }
+    // força download direto para evitar bloqueio de popup
+    const blob = new Blob([finalHTML], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Treino-${nomeAluno || "Aluno"}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   // ==========================================================
