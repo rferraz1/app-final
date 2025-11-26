@@ -26,6 +26,9 @@ export default function App() {
   const [alunoSelecionadoId, setAlunoSelecionadoId] = useState("");
   const [treinosExpandidos, setTreinosExpandidos] = useState({});
   const [destinoTreino, setDestinoTreino] = useState({});
+  const [promptIA, setPromptIA] = useState("");
+  const [gerandoIA, setGerandoIA] = useState(false);
+  const [erroIA, setErroIA] = useState("");
 
   // REMOVE ACENTOS / NORMALIZA
   function normalizar(texto) {
@@ -35,6 +38,28 @@ export default function App() {
       .replace(/[_-]/g, " ")
       .toLowerCase();
   }
+
+  const procurarGif = (nome, grupo = "") => {
+    const alvo = normalizar(nome || "");
+    // tenta dentro do grupo indicado
+    if (grupo && gifsMap[grupo]) {
+      const hit = gifsMap[grupo].find(
+        (ex) => normalizar(ex.nome) === alvo || normalizar(ex.nome).includes(alvo)
+      );
+      if (hit) return hit.url;
+    }
+    // busca em todos
+    for (const lista of Object.values(gifsMap)) {
+      const hit = lista.find(
+        (ex) => normalizar(ex.nome) === alvo || normalizar(ex.nome).includes(alvo)
+      );
+      if (hit) return hit.url;
+    }
+    // fallback: primeiro gif do grupo, senão algum genérico
+    if (grupo && gifsMap[grupo]?.[0]) return gifsMap[grupo][0].url;
+    const qualquerGrupo = Object.values(gifsMap)[0];
+    return qualquerGrupo?.[0]?.url || "";
+  };
 
   // CARREGA O ARQUIVO DE GIFS (versão com URLs remotas em public/gifsRemote.json)
   useEffect(() => {
@@ -190,6 +215,45 @@ export default function App() {
 
   const setDestino = (treinoId, alunoId) =>
     setDestinoTreino((prev) => ({ ...prev, [treinoId]: alunoId }));
+
+  const gerarTreinoIA = async () => {
+    if (!promptIA.trim()) {
+      setErroIA("Descreva o treino que deseja gerar.");
+      return;
+    }
+    setErroIA("");
+    setGerandoIA(true);
+    try {
+      const base = import.meta.env.VITE_API_URL || "";
+      const resp = await fetch(`${base}/ia/gerar-treino`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: promptIA }),
+      });
+      const data = await resp.json();
+      if (!resp.ok || !data.ok) {
+        throw new Error(data.error || "Erro ao gerar treino");
+      }
+      const lista = Array.isArray(data.treino) ? data.treino : [];
+      const agora = Date.now();
+      const montados = lista.map((ex, idx) => ({
+        id: `${agora}-${idx}`,
+        nome: ex.nome || `Exercício ${idx + 1}`,
+        grupo: ex.grupo || "Geral",
+        reps: ex.reps || "",
+        carga: ex.carga || "",
+        conjugado: !!ex.conjugado,
+        file: procurarGif(ex.nome || "", ex.grupo),
+      }));
+      setSelecionados(montados);
+      setMsgAluno("Treino gerado pela IA. Revise antes de salvar.");
+    } catch (err) {
+      console.error(err);
+      setErroIA("Não foi possível gerar o treino. Verifique a API.");
+    } finally {
+      setGerandoIA(false);
+    }
+  };
 
   const aposSalvarTreino = async (idSalvo, nomeSalvo) => {
     const id = idSalvo || alunoSelecionadoId;
@@ -354,6 +418,29 @@ export default function App() {
           </div>
 
           <div className="mt-5 space-y-4">
+            <div className="border border-blue-100 bg-blue-50/60 rounded-2xl p-3 shadow-inner">
+              <p className="text-sm font-semibold text-gray-900 mb-2">
+                Gerar treino com IA
+              </p>
+              <textarea
+                className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500 mb-3"
+                placeholder="Ex.: Treino de hipertrofia para iniciante, 5x na semana, dividir em A/B e incluir core."
+                value={promptIA}
+                onChange={(e) => setPromptIA(e.target.value)}
+                rows={3}
+              />
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={gerarTreinoIA}
+                  disabled={gerandoIA}
+                  className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm shadow-sm hover:bg-blue-700 transition disabled:opacity-60"
+                >
+                  {gerandoIA ? "Gerando..." : "Gerar com IA"}
+                </button>
+                {erroIA && <span className="text-xs text-red-600">{erroIA}</span>}
+              </div>
+            </div>
+
             {selecionados.map((s, i) => (
               <div
                 key={s.id}

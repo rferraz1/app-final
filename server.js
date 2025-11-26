@@ -3,6 +3,8 @@ import cors from "cors";
 import pkg from "pg";
 
 const { Pool } = pkg;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
 const PORT = process.env.PORT || 4000;
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -201,6 +203,75 @@ app.get("/treinos", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao listar treinos" });
+  }
+});
+
+// IA: gerar treino a partir de prompt
+app.post("/ia/gerar-treino", async (req, res) => {
+  if (!OPENAI_API_KEY) {
+    return res
+      .status(400)
+      .json({ error: "OPENAI_API_KEY não configurada no servidor." });
+  }
+
+  const prompt = (req.body?.prompt || "").trim();
+  if (!prompt) {
+    return res.status(400).json({ error: "Envie o prompt no corpo da requisição." });
+  }
+
+  try {
+    const body = {
+      model: OPENAI_MODEL,
+      messages: [
+        {
+          role: "system",
+          content:
+            "Você é um gerador de treinos. Responda APENAS com JSON no formato {\"treino\": [{\"nome\":\"...\",\"grupo\":\"...\",\"reps\":\"...\",\"carga\":\"...\",\"conjugado\":false}]}. Máx 12 exercícios. Use grupos comuns (Peito, Costas, Bíceps, Tríceps, Pernas, Ombro, Core, Cardio). Inclua reps/carga sugeridas quando fizer sentido. Campo 'conjugado' é booleano e indica se o exercício deve ser conjugado/sequencial com o anterior.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      temperature: 0.4,
+      max_tokens: 400,
+      response_format: { type: "json_object" },
+    };
+
+    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!resp.ok) {
+      const text = await resp.text();
+      console.error("OpenAI error:", text);
+      return res
+        .status(500)
+        .json({ error: "Falha ao chamar o modelo de IA." });
+    }
+
+    const data = await resp.json();
+    const content = data?.choices?.[0]?.message?.content || "{}";
+    let parsed;
+    try {
+      parsed = JSON.parse(content);
+    } catch (err) {
+      console.error("Erro ao parsear resposta da IA:", content);
+      return res
+        .status(500)
+        .json({ error: "Resposta da IA em formato inesperado." });
+    }
+
+    const treino = Array.isArray(parsed.treino) ? parsed.treino : [];
+    res.json({ ok: true, treino });
+  } catch (err) {
+    console.error("Erro na rota /ia/gerar-treino:", err);
+    res.status(500).json({ error: "Erro ao gerar treino com IA." });
   }
 });
 
