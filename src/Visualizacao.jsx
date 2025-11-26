@@ -94,15 +94,26 @@ ${bloco}
     `;
 
     // força download direto para evitar bloqueio de popup
-    const blob = new Blob([finalHTML], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Treino-${nomeAluno || "Aluno"}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    try {
+      const blob = new Blob([finalHTML], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Treino-${nomeAluno || "Aluno"}.html`;
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 0);
+    } catch (err) {
+      console.error("Falha no download direto, usando fallback:", err);
+      const dataUrl = `data:text/html;charset=utf-8,${encodeURIComponent(
+        finalHTML
+      )}`;
+      window.location.href = dataUrl;
+    }
   };
 
   // ==========================================================
