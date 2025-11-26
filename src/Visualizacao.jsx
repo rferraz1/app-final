@@ -18,29 +18,39 @@ export default function Visualizacao({
   // 🔥 GERA O HTML FINAL PARA DOWNLOAD (usa URL remota da GIF)
   // ==========================================================
   const gerarHTML = async () => {
-    const resolveImgSrc = (url) => {
+    const absolutizar = (url) => {
       if (!url) return "";
-      // Absolutiza quando for relativo
-      let full = url;
-      if (!/^https?:\/\//i.test(url)) {
-        try {
-          full = new URL(url, window.location.origin).toString();
-        } catch {
-          full = url;
-        }
+      if (/^https?:\/\//i.test(url)) return url;
+      try {
+        return new URL(url, window.location.origin).toString();
+      } catch {
+        return url;
       }
-      // Proxy público para contornar bloqueios de CORS/referrer em arquivo baixado
-      const proxied = `https://images.weserv.nl/?url=${encodeURIComponent(
-        full
-      )}`;
-      return proxied;
+    };
+
+    const baixarComoDataUrl = async (url) => {
+      const proxied = `https://images.weserv.nl/?url=${encodeURIComponent(url)}`;
+      try {
+        const resp = await fetch(proxied, { mode: "cors" });
+        if (!resp.ok) throw new Error("fetch falhou");
+        const blob = await resp.blob();
+        const reader = new FileReader();
+        return await new Promise((resolve) => {
+          reader.onloadend = () => resolve(reader.result || proxied);
+          reader.readAsDataURL(blob);
+        });
+      } catch (err) {
+        console.warn("Falha ao embutir imagem, usando proxy direto:", err);
+        return proxied;
+      }
     };
 
     let bloco = "";
 
     for (let i = 0; i < selecionados.length; i++) {
       const ex = selecionados[i];
-      const imgSrc = resolveImgSrc(ex.file); // força URL absoluta para não quebrar no download
+      const imgUrl = absolutizar(ex.file);
+      const imgSrc = await baixarComoDataUrl(imgUrl); // embute ou usa proxy direto
 
       bloco += `
         <section style="margin-bottom:40px;text-align:center;">
