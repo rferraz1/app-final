@@ -86,6 +86,7 @@ export default function App() {
         nome: item.nome,
         reps: "",
         carga: "",
+        conjugado: false,
       },
     ]);
   };
@@ -106,6 +107,11 @@ export default function App() {
   const editarCarga = (id, novo) =>
     setSelecionados((p) =>
       p.map((s) => (s.id === id ? { ...s, carga: novo } : s))
+    );
+
+  const toggleConjugado = (id) =>
+    setSelecionados((p) =>
+      p.map((s) => (s.id === id ? { ...s, conjugado: !s.conjugado } : s))
     );
 
   const mover = (index, dir) => {
@@ -173,6 +179,7 @@ export default function App() {
     setSelecionados(
       (treino.treino || []).map((ex, idx) => ({
         ...ex,
+        conjugado: !!ex.conjugado,
         id: ex.id || `${ex.nome || "ex"}-${idx}`,
       }))
     );
@@ -366,7 +373,7 @@ export default function App() {
                       onChange={(e) => editarNome(s.id, e.target.value)}
                     />
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <input
                         className="border border-gray-200 px-3 py-2 rounded-xl w-24 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500"
                         placeholder="Reps"
@@ -379,6 +386,16 @@ export default function App() {
                         value={s.carga}
                         onChange={(e) => editarCarga(s.id, e.target.value)}
                       />
+                      <button
+                        className={`px-3 py-2 rounded-xl text-xs border transition ${
+                          s.conjugado
+                            ? "bg-purple-100 text-purple-700 border-purple-200"
+                            : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+                        }`}
+                        onClick={() => toggleConjugado(s.id)}
+                      >
+                        {s.conjugado ? "Conjugado" : "Sequencial"}
+                      </button>
                     </div>
                   </div>
 
@@ -605,6 +622,7 @@ export default function App() {
                               {ex.nome || `Exercício ${i + 1}`}
                               {ex.reps ? ` — ${ex.reps}` : ""}
                               {ex.carga ? ` (${ex.carga})` : ""}
+                              {ex.conjugado ? " [Conjugado]" : ""}
                             </li>
                           ))}
                           {!exercicios.length && (

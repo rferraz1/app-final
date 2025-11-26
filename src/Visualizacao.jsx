@@ -172,13 +172,18 @@ ${bloco}
               className="p-5 border border-gray-200 rounded-2xl shadow-md bg-white/90"
             >
               <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-700 font-bold">
-                    {idx + 1}
-                  </div>
-
-                  <div className="text-lg font-semibold text-gray-900">{ex.nome}</div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-700 font-bold">
+                  {idx + 1}
                 </div>
+
+                <div className="text-lg font-semibold text-gray-900">{ex.nome}</div>
+                {ex.conjugado && (
+                  <span className="text-xs px-2 py-1 rounded-lg bg-purple-100 text-purple-700 border border-purple-200">
+                    Conjugado
+                  </span>
+                )}
+              </div>
 
                 <input
                   type="text"
