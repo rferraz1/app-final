@@ -33,6 +33,21 @@ export default function Visualizacao({
     for (let i = 0; i < selecionados.length; i++) {
       const ex = selecionados[i];
       const imgSrc = resolveImgSrc(ex.file); // força URL absoluta para não quebrar no download
+      let imgSafe = imgSrc;
+      // tenta embutir como dataURL (se CORS permitir) para não quebrar offline/local
+      try {
+        const respImg = await fetch(imgSrc, { mode: "cors" });
+        if (respImg.ok) {
+          const blobImg = await respImg.blob();
+          const reader = new FileReader();
+          imgSafe = await new Promise((resolve) => {
+            reader.onloadend = () => resolve(reader.result || imgSrc);
+            reader.readAsDataURL(blobImg);
+          });
+        }
+      } catch {
+        imgSafe = imgSrc;
+      }
 
       bloco += `
         <section style="margin-bottom:40px;text-align:center;">
@@ -57,7 +72,8 @@ export default function Visualizacao({
           }
 
           <img 
-            src="${imgSrc}" 
+            src="${imgSafe}" 
+            referrerpolicy="no-referrer"
             style="
               width:290px;height:290px;object-fit:contain;
               border-radius:14px;padding:10px;
