@@ -18,11 +18,21 @@ export default function Visualizacao({
   // 🔥 GERA O HTML FINAL PARA DOWNLOAD (usa URL remota da GIF)
   // ==========================================================
   const gerarHTML = async () => {
+    const resolveImgSrc = (url) => {
+      if (!url) return "";
+      if (/^https?:\/\//i.test(url)) return url;
+      try {
+        return new URL(url, window.location.origin).toString();
+      } catch {
+        return url;
+      }
+    };
+
     let bloco = "";
 
     for (let i = 0; i < selecionados.length; i++) {
       const ex = selecionados[i];
-      const imgSrc = ex.file; // apontamos direto para o CDN
+      const imgSrc = resolveImgSrc(ex.file); // força URL absoluta para não quebrar no download
 
       bloco += `
         <section style="margin-bottom:40px;text-align:center;">
