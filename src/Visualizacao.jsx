@@ -20,14 +20,11 @@ export default function Visualizacao({
   const gerarHTML = async () => {
     const resolveImgSrc = (url) => {
       if (!url) return "";
-      // Absolutiza se for relativo e garante encoding para espaços/caracteres especiais
+      if (/^https?:\/\//i.test(url)) return url; // mantém remoto intacto para não quebrar GIF
       try {
-        const full = /^https?:\/\//i.test(url)
-          ? url
-          : new URL(url, window.location.origin).toString();
-        return encodeURI(full);
+        return new URL(url, window.location.origin).toString();
       } catch {
-        return encodeURI(url);
+        return url;
       }
     };
 
