@@ -29,34 +29,37 @@ export default function Visualizacao({
     };
 
     const baixarComoDataUrl = async (url) => {
-      const tentaConverter = async (alvo) => {
-        const resp = await fetch(alvo, { mode: "cors" });
-        if (!resp.ok) throw new Error("fetch falhou");
-        const blob = await resp.blob();
-        const reader = new FileReader();
-        return await new Promise((resolve) => {
-          reader.onloadend = () => resolve(reader.result || alvo);
-          reader.readAsDataURL(blob); // mantém animação do GIF
-        });
+      const fontes = [
+        url,
+        `https://images.weserv.nl/?output=gif&url=${encodeURIComponent(url)}`,
+      ];
+
+      const arrayBufferToBase64 = (buffer) => {
+        let binary = "";
+        const bytes = new Uint8Array(buffer);
+        const len = bytes.byteLength;
+        for (let i = 0; i < len; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        return window.btoa(binary);
       };
 
-      const proxyGif = `https://images.weserv.nl/?output=gif&url=${encodeURIComponent(
-        url
-      )}`;
-
-      try {
-        // tenta direto na origem (mantém GIF original)
-        return await tentaConverter(url);
-      } catch (err) {
-        console.warn("Erro ao embutir direto, tentando proxy GIF:", err);
+      for (const alvo of fontes) {
+        try {
+          const resp = await fetch(alvo, { mode: "cors" });
+          if (!resp.ok) throw new Error("fetch falhou");
+          const buffer = await resp.arrayBuffer();
+          const contentType =
+            resp.headers.get("content-type") || "image/gif";
+          const base64 = arrayBufferToBase64(buffer);
+          return `data:${contentType};base64,${base64}`;
+        } catch (err) {
+          console.warn("Falha ao embutir imagem:", alvo, err);
+        }
       }
 
-      try {
-        return await tentaConverter(proxyGif);
-      } catch (err) {
-        console.warn("Falha ao embutir via proxy, usando proxy direto:", err);
-        return proxyGif;
-      }
+      // fallback: usa proxy direto (pode precisar de internet para carregar)
+      return fontes[1];
     };
 
     let bloco = "";
