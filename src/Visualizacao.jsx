@@ -20,11 +20,12 @@ export default function Visualizacao({
   const gerarHTML = async () => {
     const resolveImgSrc = (url) => {
       if (!url) return "";
-      if (/^https?:\/\//i.test(url)) return encodeURI(url);
+      // mantém URL original se já for http/https para evitar duplo encode
+      if (/^https?:\/\//i.test(url)) return url;
       try {
-        return encodeURI(new URL(url, window.location.origin).toString());
+        return new URL(url, window.location.origin).toString();
       } catch {
-        return encodeURI(url);
+        return url;
       }
     };
 
