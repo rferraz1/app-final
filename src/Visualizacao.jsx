@@ -20,11 +20,14 @@ export default function Visualizacao({
   const gerarHTML = async () => {
     const resolveImgSrc = (url) => {
       if (!url) return "";
-      if (/^https?:\/\//i.test(url)) return url;
+      // Absolutiza se for relativo e garante encoding para espaços/caracteres especiais
       try {
-        return new URL(url, window.location.origin).toString();
+        const full = /^https?:\/\//i.test(url)
+          ? url
+          : new URL(url, window.location.origin).toString();
+        return encodeURI(full);
       } catch {
-        return url;
+        return encodeURI(url);
       }
     };
 
@@ -58,6 +61,7 @@ export default function Visualizacao({
 
           <img 
             src="${imgSrc}" 
+            referrerpolicy="no-referrer"
             style="
               width:290px;height:290px;object-fit:contain;
               border-radius:14px;padding:10px;
