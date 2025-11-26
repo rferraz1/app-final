@@ -20,11 +20,11 @@ export default function Visualizacao({
   const gerarHTML = async () => {
     const resolveImgSrc = (url) => {
       if (!url) return "";
-      if (/^https?:\/\//i.test(url)) return url;
+      if (/^https?:\/\//i.test(url)) return encodeURI(url);
       try {
-        return new URL(url, window.location.origin).toString();
+        return encodeURI(new URL(url, window.location.origin).toString());
       } catch {
-        return url;
+        return encodeURI(url);
       }
     };
 
@@ -33,8 +33,6 @@ export default function Visualizacao({
     for (let i = 0; i < selecionados.length; i++) {
       const ex = selecionados[i];
       const imgSrc = resolveImgSrc(ex.file); // força URL absoluta para não quebrar no download
-      const fallbackPixel =
-        "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="; // 1px transparente
 
       bloco += `
         <section style="margin-bottom:40px;text-align:center;">
@@ -60,7 +58,6 @@ export default function Visualizacao({
 
           <img 
             src="${imgSrc}" 
-            onerror="this.onerror=null;this.src='${fallbackPixel}'"
             referrerpolicy="no-referrer"
             style="
               width:290px;height:290px;object-fit:contain;
