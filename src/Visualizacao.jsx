@@ -29,19 +29,33 @@ export default function Visualizacao({
     };
 
     const baixarComoDataUrl = async (url) => {
-      const proxied = `https://images.weserv.nl/?url=${encodeURIComponent(url)}`;
-      try {
-        const resp = await fetch(proxied, { mode: "cors" });
+      const tentaConverter = async (alvo) => {
+        const resp = await fetch(alvo, { mode: "cors" });
         if (!resp.ok) throw new Error("fetch falhou");
         const blob = await resp.blob();
         const reader = new FileReader();
         return await new Promise((resolve) => {
-          reader.onloadend = () => resolve(reader.result || proxied);
-          reader.readAsDataURL(blob);
+          reader.onloadend = () => resolve(reader.result || alvo);
+          reader.readAsDataURL(blob); // mantém animação do GIF
         });
+      };
+
+      const proxyGif = `https://images.weserv.nl/?output=gif&url=${encodeURIComponent(
+        url
+      )}`;
+
+      try {
+        // tenta direto na origem (mantém GIF original)
+        return await tentaConverter(url);
       } catch (err) {
-        console.warn("Falha ao embutir imagem, usando proxy direto:", err);
-        return proxied;
+        console.warn("Erro ao embutir direto, tentando proxy GIF:", err);
+      }
+
+      try {
+        return await tentaConverter(proxyGif);
+      } catch (err) {
+        console.warn("Falha ao embutir via proxy, usando proxy direto:", err);
+        return proxyGif;
       }
     };
 
