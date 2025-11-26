@@ -386,17 +386,16 @@ export default function App() {
                         value={s.carga}
                         onChange={(e) => editarCarga(s.id, e.target.value)}
                       />
-                      <button
-                        className={`px-3 py-2 rounded-xl text-xs border transition ${
-                          s.conjugado
-                            ? "bg-purple-100 text-purple-700 border-purple-200"
-                            : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
-                        }`}
-                        onClick={() => toggleConjugado(s.id)}
-                      >
-                        {s.conjugado ? "Conjugado" : "Sequencial"}
-                      </button>
                     </div>
+                    <label className="inline-flex items-center gap-2 text-xs text-gray-700 mt-2">
+                      <input
+                        type="checkbox"
+                        checked={s.conjugado}
+                        onChange={() => toggleConjugado(s.id)}
+                        className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-400"
+                      />
+                      <span>Marcar como conjugado</span>
+                    </label>
                   </div>
 
                   <div className="flex flex-col gap-2">
