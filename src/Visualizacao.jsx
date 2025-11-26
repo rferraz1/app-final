@@ -18,7 +18,7 @@ export default function Visualizacao({
   // 🔥 GERA O HTML FINAL PARA DOWNLOAD (usa URL remota da GIF)
   // ==========================================================
   const gerarHTML = async () => {
-    const absolutizar = (url) => {
+    const resolveImgSrc = (url) => {
       if (!url) return "";
       if (/^https?:\/\//i.test(url)) return url;
       try {
@@ -28,46 +28,11 @@ export default function Visualizacao({
       }
     };
 
-    const baixarComoDataUrl = async (url) => {
-      const fontes = [
-        url,
-        `https://images.weserv.nl/?output=gif&url=${encodeURIComponent(url)}`,
-      ];
-
-      const arrayBufferToBase64 = (buffer) => {
-        let binary = "";
-        const bytes = new Uint8Array(buffer);
-        const len = bytes.byteLength;
-        for (let i = 0; i < len; i++) {
-          binary += String.fromCharCode(bytes[i]);
-        }
-        return window.btoa(binary);
-      };
-
-      for (const alvo of fontes) {
-        try {
-          const resp = await fetch(alvo, { mode: "cors" });
-          if (!resp.ok) throw new Error("fetch falhou");
-          const buffer = await resp.arrayBuffer();
-          const contentType =
-            resp.headers.get("content-type") || "image/gif";
-          const base64 = arrayBufferToBase64(buffer);
-          return `data:${contentType};base64,${base64}`;
-        } catch (err) {
-          console.warn("Falha ao embutir imagem:", alvo, err);
-        }
-      }
-
-      // fallback: usa proxy direto (pode precisar de internet para carregar)
-      return fontes[1];
-    };
-
     let bloco = "";
 
     for (let i = 0; i < selecionados.length; i++) {
       const ex = selecionados[i];
-      const imgUrl = absolutizar(ex.file);
-      const imgSrc = await baixarComoDataUrl(imgUrl); // embute ou usa proxy direto
+      const imgSrc = resolveImgSrc(ex.file); // usa URL remota/absoluta para manter animação GIF
 
       bloco += `
         <section style="margin-bottom:40px;text-align:center;">
@@ -93,7 +58,6 @@ export default function Visualizacao({
 
           <img 
             src="${imgSrc}" 
-            referrerpolicy="no-referrer"
             style="
               width:290px;height:290px;object-fit:contain;
               border-radius:14px;padding:10px;
