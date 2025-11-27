@@ -47,12 +47,17 @@ export default function Visualizacao({
           });
           if (!resp.ok) continue;
           const blob = await resp.blob();
-          const reader = new FileReader();
-          const dataUrl = await new Promise((resolve) => {
-            reader.onloadend = () => resolve(reader.result || alvo);
-            reader.readAsDataURL(blob); // preserva animação do GIF
-          });
-          return dataUrl;
+          const arrBuf = await blob.arrayBuffer();
+          const bytes = new Uint8Array(arrBuf);
+          let binary = "";
+          for (let i = 0; i < bytes.length; i++) {
+            binary += String.fromCharCode(bytes[i]);
+          }
+          const base64 = btoa(binary);
+          const mime = blob.type && blob.type.startsWith("image/")
+            ? blob.type
+            : "image/gif";
+          return `data:${mime};base64,${base64}`;
         } catch (err) {
           console.warn("Falha ao embutir GIF:", alvo, err);
         }
@@ -64,6 +69,7 @@ export default function Visualizacao({
       selecionados.map(async (ex, idx) => {
         const urlAbs = absolutizar(ex.file);
         const imgSrc = await baixarComoDataUrl(urlAbs); // embute mantendo animação; fallback é a URL
+        const fallbackProxy = `https://images.weserv.nl/?output=gif&url=${encodeURIComponent(urlAbs)}`;
 
         return `
           <section style="margin-bottom:40px;text-align:center;">
@@ -89,6 +95,7 @@ export default function Visualizacao({
 
             <img 
               src="${imgSrc}" 
+              onerror="this.onerror=null;this.src='${fallbackProxy}';" 
               style="
                 width:290px;height:290px;object-fit:contain;
                 border-radius:14px;padding:10px;
