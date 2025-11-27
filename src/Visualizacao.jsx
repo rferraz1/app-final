@@ -47,18 +47,12 @@ export default function Visualizacao({
           });
           if (!resp.ok) continue;
           const blob = await resp.blob();
-          const arrBuf = await blob.arrayBuffer();
-          const bytes = new Uint8Array(arrBuf);
-          let binary = "";
-          for (let i = 0; i < bytes.length; i++) {
-            binary += String.fromCharCode(bytes[i]);
-          }
-          const base64 = btoa(binary);
-          const mime =
-            blob.type && blob.type.startsWith("image/")
-              ? blob.type
-              : "image/gif";
-          return `data:${mime};base64,${base64}`;
+          const reader = new FileReader();
+          const dataUrl = await new Promise((resolve) => {
+            reader.onloadend = () => resolve(reader.result || alvo);
+            reader.readAsDataURL(blob); // preserva animação do GIF
+          });
+          return dataUrl;
         } catch (err) {
           console.warn("Falha ao embutir GIF:", alvo, err);
         }
