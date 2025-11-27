@@ -47,12 +47,13 @@ export default function Visualizacao({
           });
           if (!resp.ok) continue;
           const blob = await resp.blob();
-          const reader = new FileReader();
           const dataUrl = await new Promise((resolve) => {
-            reader.onloadend = () => resolve(reader.result || alvo);
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = () => resolve(null);
             reader.readAsDataURL(blob); // preserva animação do GIF
           });
-          return dataUrl;
+          if (dataUrl) return dataUrl;
         } catch (err) {
           console.warn("Falha ao embutir GIF:", alvo, err);
         }
