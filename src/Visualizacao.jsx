@@ -34,77 +34,46 @@ export default function Visualizacao({
       }
     };
 
-    const baixarComoDataUrl = async (url) => {
-      const fontes = [
-        `https://images.weserv.nl/?output=gif&url=${encodeURIComponent(url)}`,
-        url,
-      ];
-      for (const alvo of fontes) {
-        try {
-          const resp = await fetch(alvo, {
-            mode: "cors",
-            referrerPolicy: "no-referrer",
-          });
-          if (!resp.ok) continue;
-          const blob = await resp.blob();
-          const arrBuf = await blob.arrayBuffer();
-          const bytes = new Uint8Array(arrBuf);
-          let binary = "";
-          for (let i = 0; i < bytes.length; i++) {
-            binary += String.fromCharCode(bytes[i]);
-          }
-          const base64 = btoa(binary);
-          const mime = blob.type && blob.type.startsWith("image/")
-            ? blob.type
-            : "image/gif";
-          return `data:${mime};base64,${base64}`;
-        } catch (err) {
-          console.warn("Falha ao embutir GIF:", alvo, err);
-        }
-      }
-      return url; // fallback: URL remota
-    };
+    const blocos = selecionados.map((ex, idx) => {
+      const urlAbs = absolutizar(ex.file);
+      // usa proxy por padrão para evitar bloqueios de hotlink/file:// e mantém fallback para a URL original
+      const proxied = `https://images.weserv.nl/?output=gif&url=${encodeURIComponent(urlAbs)}`;
 
-    const blocos = await Promise.all(
-      selecionados.map(async (ex, idx) => {
-        const urlAbs = absolutizar(ex.file);
-        const imgSrc = await baixarComoDataUrl(urlAbs); // embute mantendo animação; fallback é a URL
-        const fallbackProxy = `https://images.weserv.nl/?output=gif&url=${encodeURIComponent(urlAbs)}`;
-
-        return `
-          <section style="margin-bottom:40px;text-align:center;">
-            <div style="display:flex;justify-content:center;align-items:center;gap:12px;margin-bottom:8px;">
-              <div style="
-                width:32px;height:32px;border-radius:50%;
-                background:#e0e7ff;color:#4338ca;font-weight:700;
-                display:flex;justify-content:center;align-items:center;
-              ">
-                ${idx + 1}
-              </div>
-
-              <h3 style="font-size:22px;font-weight:600;">
-                ${ex.nome}
-              </h3>
+      return `
+        <section style="margin-bottom:40px;text-align:center;">
+          <div style="display:flex;justify-content:center;align-items:center;gap:12px;margin-bottom:8px;">
+            <div style="
+              width:32px;height:32px;border-radius:50%;
+              background:#e0e7ff;color:#4338ca;font-weight:700;
+              display:flex;justify-content:center;align-items:center;
+            ">
+              ${idx + 1}
             </div>
 
-            ${
-              obs[idx]
-                ? `<p style="font-size:14px;color:#555;margin-bottom:16px;">${obs[idx]}</p>`
-                : ""
-            }
+            <h3 style="font-size:22px;font-weight:600;">
+              ${ex.nome}
+            </h3>
+          </div>
 
-            <img 
-              src="${imgSrc}" 
-              onerror="this.onerror=null;this.src='${fallbackProxy}';" 
-              style="
-                width:290px;height:290px;object-fit:contain;
-                border-radius:14px;padding:10px;
-                background:#fafafa;border:1px solid #eee;"
-            />
-          </section>
-        `;
-      })
-    );
+          ${
+            obs[idx]
+              ? `<p style="font-size:14px;color:#555;margin-bottom:16px;">${obs[idx]}</p>`
+              : ""
+          }
+
+          <img 
+            src="${proxied}" 
+            data-src="${urlAbs}"
+            referrerpolicy="no-referrer"
+            onerror="this.onerror=null;this.src=this.dataset.src || '${urlAbs}';" 
+            style="
+              width:290px;height:290px;object-fit:contain;
+              border-radius:14px;padding:10px;
+              background:#fafafa;border:1px solid #eee;"
+          />
+        </section>
+      `;
+    });
     const bloco = blocos.join("\n");
 
     const finalHTML = `
