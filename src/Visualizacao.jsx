@@ -36,37 +36,34 @@ export default function Visualizacao({
 
     const dataUrlCache = {};
 
-    const baixarComoDataUrl = async (url) => {
-      if (dataUrlCache[url]) return dataUrlCache[url];
-      const fontes = [
-        url,
-        `https://images.weserv.nl/?output=gif&url=${encodeURIComponent(url)}`,
-      ];
-      for (const alvo of fontes) {
-        try {
-          const resp = await fetch(alvo, { mode: "cors", referrerPolicy: "no-referrer" });
-          if (!resp.ok) continue;
-          const blob = await resp.blob();
-          const dataUrl = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result || alvo);
-            reader.onerror = () => resolve(alvo);
-            reader.readAsDataURL(blob); // preserva animação do GIF
-          });
-          dataUrlCache[url] = dataUrl;
-          return dataUrl;
-        } catch (err) {
-          console.warn("Falha ao embutir GIF:", alvo, err);
-        }
+    const baixarComoDataUrl = async (exercicio) => {
+      const caminho = `/gifs/${encodeURIComponent(exercicio.grupo)}/${encodeURIComponent(
+        exercicio.file
+      )}`;
+      if (dataUrlCache[caminho]) return dataUrlCache[caminho];
+
+      try {
+        const resp = await fetch(caminho);
+        if (!resp.ok) throw new Error("Falha ao baixar GIF");
+        const blob = await resp.blob();
+        const dataUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result || caminho);
+          reader.onerror = () => resolve(caminho);
+          reader.readAsDataURL(blob); // mantém animação do GIF
+        });
+        dataUrlCache[caminho] = dataUrl;
+        return dataUrl;
+      } catch (err) {
+        console.warn("Falha ao embutir GIF:", caminho, err);
+        return caminho; // fallback para URL relativa
       }
-      return url; // fallback
     };
 
     const blocos = await Promise.all(
       selecionados.map(async (ex, idx) => {
-        const urlAbs = absolutizar(ex.file); // usa URL remota original
-        const inline = await baixarComoDataUrl(urlAbs);
-        const proxied = `https://images.weserv.nl/?output=gif&url=${encodeURIComponent(urlAbs)}`;
+        const inline = await baixarComoDataUrl(ex); // data URL animada
+        const urlAbs = absolutizar(ex.file); // fallback remoto em caso extremo
 
         return `
           <section style="margin-bottom:40px;text-align:center;">
@@ -93,8 +90,7 @@ export default function Visualizacao({
             <img 
               src="${inline}" 
               data-fallback="${urlAbs}"
-              data-proxy="${proxied}"
-              onerror="if(this.dataset.proxy && this.src!==this.dataset.proxy){this.src=this.dataset.proxy;return;} if(this.dataset.fallback && this.src!==this.dataset.fallback){this.src=this.dataset.fallback;}" 
+              onerror="if(this.dataset.fallback && this.src!==this.dataset.fallback){this.src=this.dataset.fallback;}" 
               style="
                 width:290px;height:290px;object-fit:contain;
                 border-radius:14px;padding:10px;
