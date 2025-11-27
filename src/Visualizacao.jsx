@@ -13,6 +13,7 @@ export default function Visualizacao({
   const [obs, setObs] = useState(selecionados.map(() => ""));
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
+  const GIFS_REMOTE_BASE = "https://pub-0173b7fd04854be5b34e1727d5fa1798.r2.dev";
 
   // ==========================================================
   // 🔥 GERA O HTML FINAL PARA DOWNLOAD (usa URL remota da GIF)
@@ -21,6 +22,11 @@ export default function Visualizacao({
     const absolutizar = (url) => {
       if (!url) return "";
       if (/^https?:\/\//i.test(url)) return url;
+      // GIFs antigos podem ter ficado salvos como "/gifs/...". Como o arquivo
+      // baixado é aberto em file://, convertemos para a URL pública para manter a animação.
+      if (url.startsWith("/gifs/")) {
+        return `${GIFS_REMOTE_BASE}${url}`;
+      }
       try {
         return new URL(url, window.location.origin).toString();
       } catch {
@@ -54,45 +60,45 @@ export default function Visualizacao({
       return url; // fallback: URL remota
     };
 
-    let bloco = "";
+    const blocos = await Promise.all(
+      selecionados.map(async (ex, idx) => {
+        const urlAbs = absolutizar(ex.file);
+        const imgSrc = await baixarComoDataUrl(urlAbs); // embute mantendo animação; fallback é a URL
 
-    for (let i = 0; i < selecionados.length; i++) {
-      const ex = selecionados[i];
-      const urlAbs = absolutizar(ex.file);
-      const imgSrc = await baixarComoDataUrl(urlAbs); // embute mantendo animação; fallback é a URL
+        return `
+          <section style="margin-bottom:40px;text-align:center;">
+            <div style="display:flex;justify-content:center;align-items:center;gap:12px;margin-bottom:8px;">
+              <div style="
+                width:32px;height:32px;border-radius:50%;
+                background:#e0e7ff;color:#4338ca;font-weight:700;
+                display:flex;justify-content:center;align-items:center;
+              ">
+                ${idx + 1}
+              </div>
 
-      bloco += `
-        <section style="margin-bottom:40px;text-align:center;">
-          <div style="display:flex;justify-content:center;align-items:center;gap:12px;margin-bottom:8px;">
-            <div style="
-              width:32px;height:32px;border-radius:50%;
-              background:#e0e7ff;color:#4338ca;font-weight:700;
-              display:flex;justify-content:center;align-items:center;
-            ">
-              ${i + 1}
+              <h3 style="font-size:22px;font-weight:600;">
+                ${ex.nome}
+              </h3>
             </div>
 
-            <h3 style="font-size:22px;font-weight:600;">
-              ${ex.nome}
-            </h3>
-          </div>
+            ${
+              obs[idx]
+                ? `<p style="font-size:14px;color:#555;margin-bottom:16px;">${obs[idx]}</p>`
+                : ""
+            }
 
-          ${
-            obs[i]
-              ? `<p style="font-size:14px;color:#555;margin-bottom:16px;">${obs[i]}</p>`
-              : ""
-          }
-
-          <img 
-            src="${imgSrc}" 
-            style="
-              width:290px;height:290px;object-fit:contain;
-              border-radius:14px;padding:10px;
-              background:#fafafa;border:1px solid #eee;"
-          />
-        </section>
-      `;
-    }
+            <img 
+              src="${imgSrc}" 
+              style="
+                width:290px;height:290px;object-fit:contain;
+                border-radius:14px;padding:10px;
+                background:#fafafa;border:1px solid #eee;"
+            />
+          </section>
+        `;
+      })
+    );
+    const bloco = blocos.join("\n");
 
     const finalHTML = `
 <!DOCTYPE html>
