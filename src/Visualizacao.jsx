@@ -28,6 +28,16 @@ export default function Visualizacao({
       }
     };
 
+    const arrayBufferToBase64 = (buffer) => {
+      const bytes = new Uint8Array(buffer);
+      const chunk = 0x8000;
+      let binary = "";
+      for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+      }
+      return window.btoa(binary);
+    };
+
     const baixarComoDataUrl = async (urlOriginal) => {
       const fontes = [
         urlOriginal,
@@ -38,20 +48,21 @@ export default function Visualizacao({
 
       for (const alvo of fontes) {
         try {
-          const resp = await fetch(alvo, { mode: "cors" });
+          const resp = await fetch(alvo, {
+            mode: "cors",
+            referrerPolicy: "no-referrer",
+          });
           if (!resp.ok) throw new Error("fetch falhou");
           const buffer = await resp.arrayBuffer();
-          const base64 = window.btoa(
-            String.fromCharCode(...new Uint8Array(buffer))
-          );
-          // mantém content-type original se presente, senão força gif
           const ct = resp.headers.get("content-type") || "image/gif";
+          const base64 = arrayBufferToBase64(buffer);
           return `data:${ct};base64,${base64}`;
         } catch (err) {
-          console.warn("Falha ao embutir imagem, tentando próxima fonte:", err);
+          console.warn("Falha ao embutir GIF, tentando próxima fonte:", err);
         }
       }
-      return ""; // se falhar tudo, voltamos para URL absoluta
+
+      return ""; // se falhar tudo, volta para URL absoluta
     };
 
     let bloco = "";
@@ -60,10 +71,9 @@ export default function Visualizacao({
       const ex = selecionados[i];
       const urlAbs = absolutizar(ex.file);
       let imgSrc = urlAbs;
-      // tenta embutir para funcionar offline/ao transferir para iPhone
       try {
-        const dataUrl = await baixarComoDataUrl(urlAbs);
-        if (dataUrl) imgSrc = dataUrl;
+        const embutido = await baixarComoDataUrl(urlAbs);
+        if (embutido) imgSrc = embutido;
       } catch {
         imgSrc = urlAbs;
       }
@@ -92,7 +102,6 @@ export default function Visualizacao({
 
           <img 
             src="${imgSrc}" 
-            referrerpolicy="no-referrer"
             style="
               width:290px;height:290px;object-fit:contain;
               border-radius:14px;padding:10px;
