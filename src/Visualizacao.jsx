@@ -30,39 +30,35 @@ export default function Visualizacao({
 
     const arrayBufferToBase64 = (buffer) => {
       const bytes = new Uint8Array(buffer);
-      const chunk = 0x8000;
       let binary = "";
-      for (let i = 0; i < bytes.length; i += chunk) {
-        binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+      const step = 0x8000;
+      for (let i = 0; i < bytes.length; i += step) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + step));
       }
       return window.btoa(binary);
     };
 
-    const baixarComoDataUrl = async (urlOriginal) => {
-      const fontes = [
-        urlOriginal,
-        `https://images.weserv.nl/?output=gif&url=${encodeURIComponent(
-          urlOriginal
-        )}`,
-      ];
-
+    const embutirGif = async (url) => {
+      const proxy = `https://images.weserv.nl/?output=gif&url=${encodeURIComponent(
+        url
+      )}`;
+      const fontes = [proxy, url]; // tenta proxy primeiro (CORS liberado), depois original
       for (const alvo of fontes) {
         try {
           const resp = await fetch(alvo, {
             mode: "cors",
             referrerPolicy: "no-referrer",
           });
-          if (!resp.ok) throw new Error("fetch falhou");
+          if (!resp.ok) throw new Error(`status ${resp.status}`);
           const buffer = await resp.arrayBuffer();
           const ct = resp.headers.get("content-type") || "image/gif";
           const base64 = arrayBufferToBase64(buffer);
           return `data:${ct};base64,${base64}`;
         } catch (err) {
-          console.warn("Falha ao embutir GIF, tentando próxima fonte:", err);
+          console.warn("Falha ao embutir GIF:", alvo, err);
         }
       }
-
-      return ""; // se falhar tudo, volta para URL absoluta
+      return url; // fallback: usa URL remota
     };
 
     let bloco = "";
@@ -70,13 +66,7 @@ export default function Visualizacao({
     for (let i = 0; i < selecionados.length; i++) {
       const ex = selecionados[i];
       const urlAbs = absolutizar(ex.file);
-      let imgSrc = urlAbs;
-      try {
-        const embutido = await baixarComoDataUrl(urlAbs);
-        if (embutido) imgSrc = embutido;
-      } catch {
-        imgSrc = urlAbs;
-      }
+      const imgSrc = await embutirGif(urlAbs); // embute para manter animação mesmo offline
 
       bloco += `
         <section style="margin-bottom:40px;text-align:center;">
