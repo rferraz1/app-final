@@ -18,9 +18,9 @@ export default function Visualizacao({
   // 🔥 GERA O HTML FINAL PARA DOWNLOAD (usa URL remota da GIF)
   // ==========================================================
   const gerarHTML = async () => {
-    const resolveImgSrc = (url) => {
+    const absolutizar = (url) => {
       if (!url) return "";
-      if (/^https?:\/\//i.test(url)) return url; // mantém remoto intacto para não quebrar GIF
+      if (/^https?:\/\//i.test(url)) return url;
       try {
         return new URL(url, window.location.origin).toString();
       } catch {
@@ -28,11 +28,45 @@ export default function Visualizacao({
       }
     };
 
+    const baixarComoDataUrl = async (urlOriginal) => {
+      const fontes = [
+        urlOriginal,
+        `https://images.weserv.nl/?output=gif&url=${encodeURIComponent(
+          urlOriginal
+        )}`,
+      ];
+
+      for (const alvo of fontes) {
+        try {
+          const resp = await fetch(alvo, { mode: "cors" });
+          if (!resp.ok) throw new Error("fetch falhou");
+          const buffer = await resp.arrayBuffer();
+          const base64 = window.btoa(
+            String.fromCharCode(...new Uint8Array(buffer))
+          );
+          // mantém content-type original se presente, senão força gif
+          const ct = resp.headers.get("content-type") || "image/gif";
+          return `data:${ct};base64,${base64}`;
+        } catch (err) {
+          console.warn("Falha ao embutir imagem, tentando próxima fonte:", err);
+        }
+      }
+      return ""; // se falhar tudo, voltamos para URL absoluta
+    };
+
     let bloco = "";
 
     for (let i = 0; i < selecionados.length; i++) {
       const ex = selecionados[i];
-      const imgSrc = resolveImgSrc(ex.file); // usa URL remota/absoluta para manter animação GIF
+      const urlAbs = absolutizar(ex.file);
+      let imgSrc = urlAbs;
+      // tenta embutir para funcionar offline/ao transferir para iPhone
+      try {
+        const dataUrl = await baixarComoDataUrl(urlAbs);
+        if (dataUrl) imgSrc = dataUrl;
+      } catch {
+        imgSrc = urlAbs;
+      }
 
       bloco += `
         <section style="margin-bottom:40px;text-align:center;">
