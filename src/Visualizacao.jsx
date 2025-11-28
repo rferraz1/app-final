@@ -37,26 +37,23 @@ export default function Visualizacao({
     const dataUrlCache = {};
 
     const baixarComoDataUrl = async (exercicio) => {
-      // 1) tenta o caminho local (igual ao build antigo: /gifs/grupo/arquivo.gif)
-      // 2) se falhar, usa a URL remota original
-      // 3) sempre converte para dataURL para ficar offline e animado
-      const caminhoLocal = (() => {
-        // se já vier um caminho /gifs, respeita
-        if (exercicio.file?.startsWith("/gifs/")) return exercicio.file;
-        // tenta transformar URL remota do R2 em caminho local
+      // Nome do arquivo (sem caminho), preservando maiúsculas/minúsculas
+      const nomeArquivo = (() => {
+        const bruto = exercicio.file || "";
+        const semQuery = bruto.split("?")[0];
+        const partes = semQuery.split("/");
+        const ultimo = partes[partes.length - 1] || bruto;
         try {
-          const u = new URL(exercicio.file);
-          if (u.pathname.startsWith("/gifs/")) {
-            return decodeURIComponent(u.pathname);
-          }
-        } catch (_) {
-          // não é URL absoluta, ignora
+          return decodeURIComponent(ultimo);
+        } catch {
+          return ultimo;
         }
-        // fallback: monta pelo grupo/nome do arquivo informado
-        return `/gifs/${encodeURIComponent(exercicio.grupo)}/${encodeURIComponent(
-          exercicio.file
-        )}`;
       })();
+
+      // Caminho local codificado (igual ao build que funciona)
+      const caminhoLocal = `/gifs/${encodeURIComponent(exercicio.grupo)}/${encodeURIComponent(
+        nomeArquivo
+      )}`;
 
       if (dataUrlCache[caminhoLocal]) return dataUrlCache[caminhoLocal];
 
