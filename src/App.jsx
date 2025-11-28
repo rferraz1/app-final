@@ -46,19 +46,19 @@ export default function App() {
       const hit = gifsMap[grupo].find(
         (ex) => normalizar(ex.nome) === alvo || normalizar(ex.nome).includes(alvo)
       );
-      if (hit) return hit.url;
+      if (hit) return encodeURI(hit.url || "");
     }
     // busca em todos
     for (const lista of Object.values(gifsMap)) {
       const hit = lista.find(
         (ex) => normalizar(ex.nome) === alvo || normalizar(ex.nome).includes(alvo)
       );
-      if (hit) return hit.url;
+      if (hit) return encodeURI(hit.url || "");
     }
     // fallback: primeiro gif do grupo, senão algum genérico
-    if (grupo && gifsMap[grupo]?.[0]) return gifsMap[grupo][0].url;
+    if (grupo && gifsMap[grupo]?.[0]) return encodeURI(gifsMap[grupo][0].url || "");
     const qualquerGrupo = Object.values(gifsMap)[0];
-    return qualquerGrupo?.[0]?.url || "";
+    return encodeURI(qualquerGrupo?.[0]?.url || "");
   };
 
   // CARREGA O ARQUIVO DE GIFS (usa caminhos locais /gifs/... para permitir embed offline)
@@ -84,10 +84,11 @@ export default function App() {
         const nomeNormalizado = normalizar(ex.nome);
 
         if (nomeNormalizado.includes(q)) {
+          const fileUrl = encodeURI(ex.url || "");
           out.push({
             key: `${grupo}::${ex.nome}`,
             grupo,
-            file: ex.url,
+            file: fileUrl,
             nome: ex.nome,
           });
         }
