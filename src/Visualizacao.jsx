@@ -60,11 +60,12 @@ export default function Visualizacao({
 
       if (dataUrlCache[caminhoLocal]) return dataUrlCache[caminhoLocal];
 
-      const fontes = [caminhoLocal, exercicio.file].filter(Boolean);
+      // tenta primeiro a URL original (R2), depois o caminho local
+      const fontes = [exercicio.file, caminhoLocal].filter(Boolean);
 
       for (const fonte of fontes) {
         try {
-          const resp = await fetch(fonte, { referrerPolicy: "no-referrer" });
+          const resp = await fetch(fonte, { mode: "cors", referrerPolicy: "no-referrer" });
           if (!resp.ok) continue;
           const blob = await resp.blob();
           const dataUrl = await new Promise((resolve) => {
