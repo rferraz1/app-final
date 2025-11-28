@@ -37,27 +37,50 @@ export default function Visualizacao({
     const dataUrlCache = {};
 
     const baixarComoDataUrl = async (exercicio) => {
-      const caminho = `/gifs/${encodeURIComponent(exercicio.grupo)}/${encodeURIComponent(
-        exercicio.file
-      )}`;
-      if (dataUrlCache[caminho]) return dataUrlCache[caminho];
+      // 1) tenta o caminho local (igual ao build antigo: /gifs/grupo/arquivo.gif)
+      // 2) se falhar, usa a URL remota original
+      // 3) sempre converte para dataURL para ficar offline e animado
+      const caminhoLocal = (() => {
+        // se já vier um caminho /gifs, respeita
+        if (exercicio.file?.startsWith("/gifs/")) return exercicio.file;
+        // tenta transformar URL remota do R2 em caminho local
+        try {
+          const u = new URL(exercicio.file);
+          if (u.pathname.startsWith("/gifs/")) {
+            return decodeURIComponent(u.pathname);
+          }
+        } catch (_) {
+          // não é URL absoluta, ignora
+        }
+        // fallback: monta pelo grupo/nome do arquivo informado
+        return `/gifs/${encodeURIComponent(exercicio.grupo)}/${encodeURIComponent(
+          exercicio.file
+        )}`;
+      })();
 
-      try {
-        const resp = await fetch(caminho);
-        if (!resp.ok) throw new Error("Falha ao baixar GIF");
-        const blob = await resp.blob();
-        const dataUrl = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result || caminho);
-          reader.onerror = () => resolve(caminho);
-          reader.readAsDataURL(blob); // mantém animação do GIF
-        });
-        dataUrlCache[caminho] = dataUrl;
-        return dataUrl;
-      } catch (err) {
-        console.warn("Falha ao embutir GIF:", caminho, err);
-        return caminho; // fallback para URL relativa
+      if (dataUrlCache[caminhoLocal]) return dataUrlCache[caminhoLocal];
+
+      const fontes = [caminhoLocal, exercicio.file].filter(Boolean);
+
+      for (const fonte of fontes) {
+        try {
+          const resp = await fetch(fonte, { referrerPolicy: "no-referrer" });
+          if (!resp.ok) continue;
+          const blob = await resp.blob();
+          const dataUrl = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result || fonte);
+            reader.onerror = () => resolve(fonte);
+            reader.readAsDataURL(blob); // mantém animação do GIF
+          });
+          dataUrlCache[caminhoLocal] = dataUrl;
+          return dataUrl;
+        } catch (err) {
+          console.warn("Falha ao embutir GIF:", fonte, err);
+        }
       }
+
+      return exercicio.file || caminhoLocal; // último recurso
     };
 
     const blocos = await Promise.all(
