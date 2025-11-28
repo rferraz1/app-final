@@ -61,12 +61,12 @@ export default function App() {
     return qualquerGrupo?.[0]?.url || "";
   };
 
-  // CARREGA O ARQUIVO DE GIFS (versão com URLs remotas em public/gifsRemote.json)
+  // CARREGA O ARQUIVO DE GIFS (usa caminhos locais /gifs/... para permitir embed offline)
   useEffect(() => {
-    fetch("/gifsRemote.json")
+    fetch("/gifs.json")
       .then((res) => res.json())
       .then((data) => setGifsMap(data))
-      .catch((err) => console.error("Erro carregando gifsRemote.json:", err));
+      .catch((err) => console.error("Erro carregando gifs.json:", err));
   }, []);
 
   // FILTRO DE BUSCA — USA O NOME NORMALIZADO JÁ LIMPO DO JSON
